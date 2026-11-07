@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDS Library — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#f3f6fa;--card:#fff;--ink:#0d1b2a;--mute:#5a6879;--acc:#1f6f8b;--acc2:#0e5a75;
+  --line:#e2e8f0;--bad:#b3261e;--soft:#eaf1f6;--shadow:0 2px 8px rgba(13,27,42,.06);
+  --radius:12px;--folder:#e9a23b;--ok:#1f8a4c;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0b1420;--card:#131e2e;--ink:#e8eef7;--mute:#8b9bb0;--acc:#5cb8d6;--acc2:#7ecbe4;
+    --line:#1f2c3e;--bad:#ff8a80;--soft:#182438;--shadow:0 2px 8px rgba(0,0,0,.35);
+    --folder:#e9a23b;--ok:#4ade80}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.hidden{display:none!important}
+a{color:var(--acc);text-decoration:none;overflow-wrap:anywhere}
+input,textarea,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;
+  background:var(--bg);color:var(--ink);outline:none;transition:border .15s,box-shadow .15s;margin:5px 0}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--soft)}
+textarea{min-height:70px;resize:vertical}
+label.muted{display:block;font-size:12.5px;color:var(--mute);margin:8px 0 2px;font-weight:500}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 16px;border-radius:10px;font-weight:600;transition:background .15s,transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--acc);color:#fff}
+.btn.primary:hover{background:var(--acc2)}
+.btn.secondary{background:transparent;border:1.5px solid var(--acc);color:var(--acc)}
+.btn.secondary:hover{background:var(--soft)}
+.btn.danger{background:transparent;border:1.5px solid var(--bad);color:var(--bad)}
+.btn.danger:hover{background:rgba(179,38,30,.08)}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--soft)}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:8px}
+
+#auth{min-height:100vh;display:grid;place-items:center;padding:24px 16px;
+  background:radial-gradient(circle at 20% 0%,var(--soft),var(--bg) 60%)}
+.auth-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:32px 28px;box-shadow:var(--shadow)}
+.auth-logo{width:56px;height:56px;border-radius:14px;background:var(--acc);color:#fff;
+  display:grid;place-items:center;font:700 22px 'Bricolage Grotesque',serif;margin-bottom:16px}
+.auth-card h1{font:700 22px 'Bricolage Grotesque',Georgia,serif;margin:0 0 4px}
+.auth-card p{color:var(--mute);margin:0 0 20px;font-size:14px}
+.auth-actions{display:flex;gap:8px;margin-top:20px}
+.auth-actions .btn{flex:1}
+.auth-msg{margin-top:14px;font-size:13px;min-height:18px}
+.auth-msg.err{color:var(--bad)}
+.auth-msg.ok{color:var(--ok)}
+
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:40;background:var(--card);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 16px;
+  display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:0}
+.brand .logo{width:36px;height:36px;border-radius:10px;background:var(--acc);color:#fff;
+  display:grid;place-items:center;font:700 15px 'Bricolage Grotesque',serif;flex:none;
+  overflow:hidden}
+.brand .logo img{width:100%;height:100%;object-fit:cover}
+.brand .title{font:700 16px 'Bricolage Grotesque',Georgia,serif;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.admin-badge{font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:99px;
+  background:var(--soft);color:var(--acc);text-transform:uppercase}
+.spacer{flex:1}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  border:1.5px solid var(--line);background:var(--card);flex:none;position:relative;
+  transition:background .15s,border-color .15s}
+.icon-btn:hover{background:var(--soft);border-color:var(--acc)}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--acc);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px;flex:none;
+  border:2px solid var(--card);box-shadow:0 0 0 1.5px var(--line)}
+.profile-wrap{position:relative;flex:none}
+.profile-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:220px;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);
+  padding:6px;z-index:50}
+.profile-menu .pm-head{padding:10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.profile-menu .pm-head b{display:block;font-size:14px}
+.profile-menu .pm-head span{font-size:12px;color:var(--mute)}
+.profile-menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 12px;
+  border-radius:8px;font-size:14px;text-align:left}
+.profile-menu button:hover{background:var(--soft)}
+.profile-menu button.danger{color:var(--bad)}
+
+.toolbar{max-width:1200px;margin:0 auto;width:100%;padding:14px 16px 0;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mode-tabs{display:flex;gap:4px;background:var(--soft);padding:3px;border-radius:9px;flex-wrap:wrap}
+.mode-tabs button{padding:6px 11px;border-radius:7px;font-size:13px;font-weight:600;color:var(--mute);
+  display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.mode-tabs button.active{background:var(--card);color:var(--acc);box-shadow:var(--shadow)}
+.view-toggle{display:flex;gap:4px;background:var(--soft);padding:3px;border-radius:9px}
+.view-toggle button{padding:6px 10px;border-radius:7px;font-size:13px;font-weight:600;color:var(--mute)}
+.view-toggle button.active{background:var(--card);color:var(--acc);box-shadow:var(--shadow)}
+.search-box{position:relative;flex:1;min-width:140px}
+.search-box input{margin:0;padding-left:32px}
+.search-box::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  font-size:13px;opacity:.55;pointer-events:none}
+
+.breadcrumb{display:flex;align-items:center;gap:6px;max-width:1200px;width:100%;
+  margin:0 auto;padding:8px 16px 0;font-size:14px;color:var(--mute)}
+.breadcrumb .crumb{color:var(--mute);font-weight:500;cursor:pointer;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.breadcrumb .crumb:hover{color:var(--acc)}
+.breadcrumb .crumb.current{color:var(--ink);font-weight:600;cursor:default}
+.breadcrumb .sep{opacity:.4}
+
+.products{max-width:1200px;margin:0 auto;width:100%;padding:8px 16px 40px;flex:1}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:460px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+
+.section-label{grid-column:1/-1;font:700 13px 'Bricolage Grotesque',serif;
+  color:var(--mute);text-transform:uppercase;letter-spacing:.06em;
+  padding:8px 0 0;border-top:1px solid var(--line);margin-top:6px}
+.section-label:first-child{border-top:0;margin-top:0;padding-top:0}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;
+  display:flex;flex-direction:column;position:relative}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);box-shadow:0 6px 18px rgba(31,111,139,.15)}
+.card .thumb{aspect-ratio:4/3;background:var(--soft);display:grid;place-items:center;
+  font:700 20px 'Bricolage Grotesque',sans-serif;color:var(--acc);overflow:hidden;position:relative}
+.card .thumb img{width:100%;height:100%;object-fit:cover}
+.card .thumb .type-tag{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.65);color:#fff;
+  font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:5px;text-transform:uppercase;z-index:1}
+.card .name{padding:8px 10px 10px;font-size:13px;font-weight:600;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  text-align:center;min-height:44px}
+.card .quick-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;
+  transition:opacity .15s;z-index:2}
+.card:hover .quick-actions{opacity:1}
+.card .quick-actions button{width:26px;height:26px;border-radius:50%;
+  background:rgba(0,0,0,.65);color:#fff;font-size:13px;display:grid;place-items:center;
+  backdrop-filter:blur(4px)}
+.card .quick-actions button:hover{background:var(--acc)}
+.card .quick-actions button.del:hover{background:var(--bad)}
+
+.card.folder-card .thumb{background:linear-gradient(180deg,var(--soft) 0%,rgba(233,162,59,.12) 100%);
+  display:flex;flex-direction:column;justify-content:center;gap:4px}
+.folder-icon{width:52px;height:44px;position:relative;flex:none;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.15))}
+.folder-icon svg{display:block;width:100%;height:100%}
+.folder-count{position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
+
+.list .card{flex-direction:row;align-items:center;border-radius:10px;padding:8px 12px;gap:10px}
+.list .card .thumb{width:48px;height:48px;aspect-ratio:1;flex:none;border-radius:8px;font-size:14px}
+.list .card .name{flex:1;padding:0;text-align:left;min-height:0;
+  -webkit-line-clamp:1;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .card .type-tag{position:static;background:var(--soft);color:var(--acc);font-size:10px;
+  padding:2px 8px;border-radius:99px}
+.list .card .quick-actions{position:static;opacity:1}
+.list .card .quick-actions button{background:var(--soft);color:var(--ink)}
+.list .card .quick-actions button:hover{background:var(--acc);color:#fff}
+.list .folder-card .folder-icon{width:36px;height:30px;filter:none}
+.list .folder-card{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.list .folder-card .thumb{width:36px;height:32px;aspect-ratio:unset;background:transparent;border:0}
+.list .folder-card .name{flex:1;text-align:left;min-height:0;padding:0;font-size:14px}
+.list .folder-card .folder-count{position:static;background:var(--soft);color:var(--folder);
+  font-size:11px;padding:2px 8px;margin-left:auto}
+.list .section-label{padding:14px 0 4px}
+
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--mute)}
+.empty .ico{font-size:44px;display:block;margin-bottom:10px;opacity:.5}
+
+.dock{max-width:1200px;margin:0 auto;width:100%;padding:0 16px 30px;
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.dock{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dock-btn{padding:14px 12px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:600;
+  color:var(--ink);transition:border-color .15s,transform .1s,background .15s}
+.dock-btn:hover{border-color:var(--acc);background:var(--soft)}
+.dock-btn .ico{font-size:22px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:16px;max-width:680px;width:100%;max-height:90vh;
+  overflow:auto;box-shadow:0 24px 64px rgba(0,0,0,.35);position:relative}
+.modal-head{display:flex;align-items:center;gap:10px;padding:18px 20px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2;
+  border-radius:16px 16px 0 0}
+.modal-head h3{font:700 17px 'Bricolage Grotesque',Georgia,serif;margin:0;flex:1}
+.modal-head .close{width:34px;height:34px;border-radius:50%;background:var(--soft);
+  display:grid;place-items:center;font-size:20px;color:var(--mute);flex:none}
+.modal-head .close:hover{background:var(--line);color:var(--ink)}
+.modal-body{padding:18px 20px 22px}
+.modal-body .row{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.modal-body .row .btn{flex:1;min-width:120px}
+
+/* Logo / cover picker */
+.logo-picker{display:flex;gap:14px;align-items:flex-start;margin-top:6px}
+.logo-preview{width:96px;height:96px;border-radius:12px;background:var(--soft);
+  border:1.5px dashed var(--line);display:grid;place-items:center;
+  font:700 22px 'Bricolage Grotesque',sans-serif;color:var(--acc);flex:none;overflow:hidden;position:relative}
+.logo-preview img{width:100%;height:100%;object-fit:cover}
+.logo-preview .empty-ico{font-size:28px;opacity:.5}
+.logo-controls{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.logo-controls .url-row{display:flex;gap:6px}
+.logo-controls .url-row input{margin:0;flex:1}
+.logo-controls .logo-btns{display:flex;gap:6px;flex-wrap:wrap}
+.logo-controls .logo-btns .btn{flex:none}
+.logo-hint{font-size:11.5px;color:var(--mute);margin-top:2px}
+
+.upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.upload-grid button{padding:16px 10px;border-radius:10px;background:var(--bg);border:1.5px dashed var(--line);
+  display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:600;
+  color:var(--ink);transition:border-color .15s,color .15s}
+.upload-grid button:hover{border-color:var(--acc);color:var(--acc)}
+.upload-grid button .ico{font-size:20px}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;background:var(--acc);width:0;transition:width .2s}
+.up-msg{font-size:13px;margin-top:10px;min-height:16px}
+.up-msg.err{color:var(--bad)}
+.up-msg.ok{color:var(--ok)}
+
+.edit-panel{grid-column:1/-1;background:var(--soft);border:1.5px solid var(--acc);
+  border-radius:12px;padding:16px 18px;margin-top:6px}
+
+.list-item{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:10px;align-items:flex-start}
+.list-item:first-child{border-top:0}
+.list-item .li-body{flex:1;min-width:0;font-size:14px}
+.list-item .li-body b{display:block;font-size:14px;margin-bottom:2px}
+.list-item .li-body .meta{font-size:12px;color:var(--mute)}
+
+.chat-thread{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding:4px 0 10px}
+.bubble{max-width:80%;padding:8px 12px;border-radius:12px;font-size:13.5px;line-height:1.4}
+.bubble.me{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:4px}
+.bubble.them{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bubble .time{display:block;font-size:10.5px;opacity:.7;margin-top:2px}
+
+.student-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;
+  border:1px solid var(--line);margin-bottom:6px;cursor:pointer;transition:background .12s,border-color .12s}
+.student-row:hover{background:var(--soft);border-color:var(--acc)}
+.student-row .st-av{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.student-row .st-info{flex:1;min-width:0}
+.student-row .st-info b{display:block;font-size:14px}
+.student-row .st-info span{font-size:12px;color:var(--mute);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+
+footer.site-footer{border-top:1px solid var(--line);padding:16px;text-align:center;
+  font-size:12.5px;color:var(--mute);background:var(--card)}
+</style>
+</head>
+<body>
+
+<section id="auth">
+  <div class="auth-card">
+    <div class="auth-logo" id="loginLogo">R</div>
+    <h1 id="loginTitle">RDS Library · Admin</h1>
+    <p>Sign in with your admin account.</p>
+    <label class="muted" for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" placeholder="you@example.com">
+    <label class="muted" for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div class="auth-actions">
+      <button id="login" class="btn primary">Sign in</button>
+      <button id="signup" class="btn ghost">Create</button>
+    </div>
+    <p id="authMsg" class="auth-msg"></p>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" id="brandLogo">R</div>
+        <div class="title" id="siteTitle">RDS Library</div>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="search-box" style="max-width:260px;flex:none">
+        <input id="search" placeholder="Search files…">
+      </div>
+      <div class="profile-wrap">
+        <button class="avatar" id="btnProfile" aria-label="Account">
+          <span id="avatarInitial">?</span>
+        </button>
+        <div id="profileMenu" class="profile-menu hidden">
+          <div class="pm-head">
+            <b id="pmName">Admin</b>
+            <span id="pmEmail"></span>
+          </div>
+          <button id="menuSettings">⚙️ Site settings</button>
+          <button id="menuNotices">📢 Notices</button>
+          <button id="menuComments">💬 Comments</button>
+          <button id="menuChats">✉️ Student chats</button>
+          <button id="menuSignout" class="danger">🚪 Sign out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="mode-tabs" id="modeTabs">
+      <button data-mode="all" class="active">📚 All</button>
+      <button data-mode="folders">📁 Folders</button>
+      <button data-mode="date">📅 By date</button>
+      <button data-mode="alpha">🔤 A–Z</button>
+      <button data-mode="category">🏷️ Category</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="view-toggle">
+      <button id="viewGrid" class="active" data-view="grid">▦ Grid</button>
+      <button id="viewList" data-view="list">☰ List</button>
+    </div>
+  </div>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <main class="products">
+    <div id="products" class="grid"></div>
+  </main>
+
+  <div class="dock">
+    <button class="dock-btn" id="dockUpload"><span class="ico">☁️</span>Upload file</button>
+    <button class="dock-btn" id="dockSettings"><span class="ico">⚙️</span>Site settings</button>
+    <button class="dock-btn" id="dockNotices"><span class="ico">📢</span>Notices</button>
+    <button class="dock-btn" id="dockComments"><span class="ico">💬</span>Comments</button>
+    <button class="dock-btn" id="dockChats"><span class="ico">✉️</span>Chats</button>
+  </div>
+
+  <footer class="site-footer" id="siteFooter"></footer>
+</div>
+
+<!-- ============ UPLOAD MODAL ============ -->
+<div id="uploadModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Upload learning material</h3>
+      <button class="close" data-close="uploadModal">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="muted">Title (optional)</label>
+      <input id="upTitle" placeholder="Leave blank to use filename">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="muted">Folder</label>
+          <input id="upFolder" list="folderList" placeholder="e.g. Math / Class 8">
+          <datalist id="folderList"></datalist>
+        </div>
+        <div>
+          <label class="muted">Category</label>
+          <select id="upCategory">
+            <option value="">Auto-detect</option>
+            <option>PDF</option>
+            <option>Document</option>
+            <option>Image</option>
+            <option>Video</option>
+            <option>Excel</option>
+            <option>HTML</option>
+            <option>Simulation</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <label class="muted">Description / instructions</label>
+      <textarea id="upDesc" placeholder="What is this file about?"></textarea>
+
+      <!-- LOGO PICKER -->
+      <label class="muted">Logo / cover image <span style="opacity:.6;font-weight:400">(shown as the file's thumbnail)</span></label>
+      <div class="logo-picker">
+        <div class="logo-preview" id="upLogoPreview"><span class="empty-ico">🖼️</span></div>
+        <div class="logo-controls">
+          <div class="logo-btns">
+            <button type="button" class="btn sm secondary" id="upLogoUpload">📤 Upload logo</button>
+            <button type="button" class="btn sm ghost" id="upLogoClear">Clear</button>
+          </div>
+          <div class="url-row" style="margin-top:4px">
+            <input id="upLogo" placeholder="…or paste an image URL">
+          </div>
+          <div class="logo-hint">PNG, JPG, or WEBP. Square images look best.</div>
+        </div>
+      </div>
+
+      <label class="muted" style="display:flex;align-items:center;gap:6px;margin-top:12px">
+        <input type="checkbox" id="upSim" style="width:auto;margin:0"> Mark as simulation / interactive activity
+      </label>
+
+      <p class="muted" style="margin-top:14px">Choose a file type to upload from your device:</p>
+      <div class="upload-grid">
+        <button data-kind="pdf"><span class="ico">📄</span>PDF / Doc</button>
+        <button data-kind="image"><span class="ico">🖼️</span>Image</button>
+        <button data-kind="video"><span class="ico">🎬</span>Video</button>
+        <button data-kind="excel"><span class="ico">📊</span>Excel / CSV</button>
+        <button data-kind="html"><span class="ico">🌐</span>HTML / Zip</button>
+        <button data-kind="any"><span class="ico">📁</span>Any file</button>
+      </div>
+      <div id="upProgress" class="progress hidden"><i></i></div>
+      <p id="upMsg" class="up-msg"></p>
+
+      <p class="muted" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+        Or add a link manually (Drive, YouTube, simulation, etc.)
+      </p>
+      <label class="muted">URL</label>
+      <input id="upUrl" type="url" placeholder="https://…">
+      <div class="row">
+        <button class="btn secondary" id="addLinkBtn">Add link to library</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Site settings &amp; profile</h3>
+      <button class="close" data-close="settingsModal">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="muted">Site title</label>
+      <input id="setTitle" placeholder="RDS Library">
+      <label class="muted">Header message</label>
+      <input id="setSubtitle" placeholder="Study material from your teacher.">
+      <label class="muted">Footer text</label>
+      <input id="setFooter" placeholder="Footer text">
+      <label class="muted">Teacher display name</label>
+      <input id="setTeacherName" placeholder="Your name">
+      <label class="muted">Teacher bio / contact</label>
+      <textarea id="setTeacherBio" placeholder="Short bio or contact details"></textarea>
+      <div class="row">
+        <button class="btn primary" id="saveSettings">Save site details</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NOTICES MODAL ============ -->
+<div id="noticesModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Notices</h3>
+      <button class="close" data-close="noticesModal">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="muted">Title</label>
+      <input id="noticeTitle" placeholder="Notice title">
+      <label class="muted">Message</label>
+      <textarea id="noticeBody" placeholder="Notice message"></textarea>
+      <div class="row">
+        <button class="btn primary" id="postNotice">Publish notice</button>
+      </div>
+      <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line)">
+        <p class="muted" style="margin-bottom:8px">Published notices</p>
+        <div id="noticesList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMMENTS MODAL ============ -->
+<div id="commentsModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Student comments</h3>
+      <button class="close" data-close="commentsModal">×</button>
+    </div>
+    <div class="modal-body"><div id="commentsList"></div></div>
+  </div>
+</div>
+
+<!-- ============ CHATS MODAL ============ -->
+<div id="chatsModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Student conversations</h3>
+      <button class="close" data-close="chatsModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="studentList"></div>
+      <div id="chatPanel" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <button class="btn sm ghost" id="backToStudents">← Back</button>
+          <b id="chatHeading" style="flex:1;font-size:14px"></b>
+        </div>
+        <div id="chatThread" class="chat-thread"></div>
+        <textarea id="replyText" placeholder="Write a reply…"></textarea>
+        <div class="row">
+          <button class="btn primary" id="sendReply">Send reply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIREBASE ============ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig={
+  apiKey:"AIzaSyBPAujSIQnIdXOhAGV1zwafvFiZr6z5u0Y",
+  authDomain:"rds-library-3a1b0.firebaseapp.com",
+  databaseURL:"https://rds-library-3a1b0-default-rtdb.firebaseio.com",
+  projectId:"rds-library-3a1b0",
+  storageBucket:"rds-library-3a1b0.firebasestorage.app",
+  messagingSenderId:"258223710686",
+  appId:"1:258223710686:web:68872b10e298741b7dbd4f",
+  measurementId:"G-1KTQSJGBP6"
+};
+const CLOUDINARY_CLOUD="ihvnjxhv";
+const CLOUDINARY_PRESET="jnlo0crp";
+
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.database(),$=s=>document.querySelector(s);
+
+let admin=null,openChat=null;
+let filesCache={};
+let viewMode=localStorage.getItem("adminViewMode")||"grid";
+let displayMode=localStorage.getItem("adminDisplayMode")||"all";
+let currentFolder=null;
+let unsubs=[];
+
+/* ============ helpers ============ */
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function date(ts){return ts?new Date(ts).toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):""}
+function dateOnly(ts){
+  if(!ts)return"Unknown";
+  const d=new Date(ts),today=new Date(),yest=new Date();yest.setDate(today.getDate()-1);
+  const same=(a,b)=>a.toDateString()===b.toDateString();
+  if(same(d,today))return"Today";if(same(d,yest))return"Yesterday";
+  return d.toLocaleDateString([], {year:"numeric",month:"long",day:"numeric"});
+}
+function push(path,data){return db.ref(path).push(data)}
+function listen(path,fn){const ref=db.ref(path),cb=s=>fn(s.val()||{});ref.on("value",cb);unsubs.push(()=>ref.off("value",cb))}
+function stopAll(){unsubs.forEach(f=>f());unsubs=[]}
+function authMessage(t,ok=false){$("#authMsg").textContent=t;$("#authMsg").className="auth-msg "+(ok?"ok":"err")}
+function extOf(name){return (String(name||"").split(".").pop()||"").toLowerCase()}
+function fmtBytes(b){if(!b)return"";return b>1048576?(b/1048576).toFixed(1)+" MB":Math.ceil(b/1024)+" KB"}
+function roleOf(uid){return db.ref("users/"+uid+"/role").once("value").then(s=>s.val())}
+function normFile(f){
+  return {
+    ...f,
+    title: f.title||f.name||"Untitled",
+    category: f.category||f.cat||"Learning material",
+    description: f.description||f.desc||"",
+    folder: (f.folder||"General").trim()||"General",
+    logo: f.logo||"",
+    createdAt: f.createdAt||f.ts||Date.now(),
+    simulation: !!f.simulation,
+    format: f.format||extOf(f.url||"")
+  };
+}
+function isPdf(f){const u=(f.url||"").toLowerCase().split("?")[0];return u.endsWith(".pdf")||f.category==="PDF"}
+function isImage(f){return (f.format||extOf(f.url||"")).match(/^(jpe?g|png|gif|webp|svg|bmp|avif)$/i)}
+function isVideo(f){return (f.format||extOf(f.url||"")).match(/^(mp4|webm|mov|m4v|ogg|avi)$/i)}
+function fileKind(f){
+  if(isPdf(f))return"pdf";if(isImage(f))return"image";if(isVideo(f))return"video";
+  const fmt=(f.format||"").toLowerCase();
+  if(["xlsx","xls","csv"].includes(fmt))return"excel";
+  if(["html","htm"].includes(fmt))return"html";
+  if(["doc","docx","txt","rtf","odt"].includes(fmt))return"doc";
+  return"other";
+}
+function folderSVG(){
+  return `<svg viewBox="0 0 64 54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M6 12a4 4 0 0 1 4-4h14l5 5h25a4 4 0 0 1 4 4v2H6v-7z" fill="#c9862a"/>
+    <path d="M6 15h52a4 4 0 0 1 4 4v23a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V15z" fill="#e9a23b"/>
+    <path d="M6 15h52a4 4 0 0 1 4 4v3H6v-7z" fill="#f4b862"/>
+  </svg>`;
+}
+function badgeFor(f){
+  const k=fileKind(f);
+  return {pdf:"PDF",image:"IMG",video:"VID",excel:"XLS",html:"HTML",doc:"DOC",other:"FILE"}[k]||"FILE";
+}
+
+/* ============ AUTH ============ */
+$("#login").onclick=()=>auth.signInWithEmailAndPassword($("#email").value.trim(),$("#password").value).catch(e=>authMessage(e.message));
+$("#signup").onclick=async()=>{
+  try{
+    const c=await auth.createUserWithEmailAndPassword($("#email").value.trim(),$("#password").value);
+    await db.ref("users/"+c.user.uid).update({email:c.user.email,name:c.user.email,role:"student",createdAt:Date.now()});
+    authMessage("Account created. Set /users/"+c.user.uid+"/role to admin in Firebase, then sign in again.");
+    await auth.signOut();
+  }catch(e){authMessage(e.message)}
+};
+
+auth.onAuthStateChanged(async user=>{
+  stopAll();admin=null;openChat=null;
+  $("#app").classList.add("hidden");
+  $("#auth").classList.remove("hidden");
+  closeAllModals();
+  if(!user)return;
+  try{
+    const role=await roleOf(user.uid);
+    if(role!=="admin"){authMessage("This account is not an admin.");await auth.signOut();return}
+    admin=user;
+    $("#auth").classList.add("hidden");
+    $("#app").classList.remove("hidden");
+    $("#avatarInitial").textContent=(user.email||"A").charAt(0).toUpperCase();
+    $("#pmName").textContent="Administrator";
+    $("#pmEmail").textContent=user.email||"";
+    startAdmin();
+  }catch(e){authMessage("Could not check role: "+e.message)}
+});
+
+$("#btnProfile").onclick=e=>{e.stopPropagation();$("#profileMenu").classList.toggle("hidden")};
+document.addEventListener("click",e=>{if(!e.target.closest(".profile-wrap"))$("#profileMenu").classList.add("hidden")});
+$("#menuSignout").onclick=()=>auth.signOut();
+$("#menuSettings").onclick=()=>{$("#profileMenu").classList.add("hidden");openModal("settingsModal")};
+$("#menuNotices").onclick=()=>{$("#profileMenu").classList.add("hidden");openModal("noticesModal")};
+$("#menuComments").onclick=()=>{$("#profileMenu").classList.add("hidden");openModal("commentsModal")};
+$("#menuChats").onclick=()=>{$("#profileMenu").classList.add("hidden");openModal("chatsModal")};
+
+/* ============ START ============ */
+function startAdmin(){
+  listen("settings",v=>{
+    $("#siteTitle").textContent=v.title||"RDS Library";
+    $("#loginTitle").textContent=(v.title||"RDS Library")+" · Admin";
+    const initial=(v.title||"RDS Library").trim().charAt(0).toUpperCase();
+    $("#brandLogo").textContent=initial;
+    $("#loginLogo").textContent=initial;
+    $("#siteFooter").textContent=v.footer||"";
+    $("#setTitle").value=v.title||"RDS Library";
+    $("#setSubtitle").value=v.subtitle||"Study material from your teacher.";
+    $("#setFooter").value=v.footer||"";
+    $("#setTeacherName").value=v.teacherName||"";
+    $("#setTeacherBio").value=v.teacherBio||"";
+    document.title=(v.title||"RDS Library")+" · Admin";
+  });
+  listen("notices",renderNotices);
+  listen("files",v=>{
+    const normalised={};
+    Object.entries(v).forEach(([id,f])=>{normalised[id]=normFile(f)});
+    filesCache=normalised;
+    renderProducts();
+    updateFolderSuggestions();
+  });
+  listen("comments",renderComments);
+  listen("conversations",renderStudentList);
+}
+
+/* ============ MODE TABS ============ */
+document.querySelectorAll("#modeTabs button").forEach(btn=>{
+  btn.onclick=()=>{
+    displayMode=btn.dataset.mode;
+    localStorage.setItem("adminDisplayMode",displayMode);
+    currentFolder=null;
+    updateModeTabs();
+    renderProducts();
+  };
+});
+function updateModeTabs(){
+  document.querySelectorAll("#modeTabs button").forEach(b=>{
+    b.classList.toggle("active",b.dataset.mode===displayMode);
+  });
+}
+function setView(v){
+  viewMode=v;localStorage.setItem("adminViewMode",v);
+  $("#viewGrid").classList.toggle("active",v==="grid");
+  $("#viewList").classList.toggle("active",v==="list");
+  $("#products").className=v==="grid"?"grid":"grid list";
+}
+$("#viewGrid").onclick=()=>setView("grid");
+$("#viewList").onclick=()=>setView("list");
+
+/* ============ PRODUCTS ============ */
+function thumbInner(f){
+  // Prefer custom logo, fall back to auto image, else type badge
+  if(f.logo)return `<img src="${esc(f.logo)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${badgeFor(f)}'))">`;
+  if(isImage(f))return `<img src="${esc(f.url)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${badgeFor(f)}'))">`;
+  return esc(badgeFor(f));
+}
+function makeFileCard(id,f){
+  const el=document.createElement("article");
+  el.className="card";
+  el.tabIndex=0;
+  el.innerHTML=`
+    <div class="quick-actions">
+      <button class="edit" title="Edit">✎</button>
+      <button class="del" title="Remove">🗑</button>
+    </div>
+    <div class="thumb">
+      ${thumbInner(f)}
+      ${viewMode==="grid"?`<span class="type-tag">${badgeFor(f)}</span>`:""}
+    </div>
+    <div class="name">${esc(f.title)}</div>
+    ${viewMode==="list"?`<span class="type-tag">${badgeFor(f)}</span>`:""}
+  `;
+  el.querySelector(".edit").onclick=e=>{e.stopPropagation();openEditPanel(id,f)};
+  el.querySelector(".del").onclick=async e=>{
+    e.stopPropagation();
+    if(!confirm("Remove this file?"))return;
+    try{await db.ref("files/"+id).remove();}catch(err){alert(err.message)}
+  };
+  return el;
+}
+function makeFolderCard(name,count){
+  const el=document.createElement("article");
+  el.className="card folder-card";
+  el.tabIndex=0;
+  el.innerHTML=`
+    <div class="thumb">
+      <div class="folder-icon">${folderSVG()}</div>
+      ${viewMode==="grid"?`<span class="folder-count">${count}</span>`:""}
+    </div>
+    <div class="name">${esc(name)}</div>
+    ${viewMode==="list"?`<span class="folder-count">${count} file${count!==1?"s":""}</span>`:""}
+  `;
+  el.onclick=()=>{currentFolder=name;renderProducts()};
+  return el;
+}
+function makeSectionLabel(text){
+  const el=document.createElement("div");el.className="section-label";el.textContent=text;return el;
+}
+function renderBreadcrumb(){
+  const bc=$("#breadcrumb");
+  const labels={all:"📚 All files",folders:"📁 Folders",date:"📅 By date",alpha:"🔤 A–Z",category:"🏷️ Category"};
+  if(displayMode!=="folders"||currentFolder===null){
+    bc.innerHTML=`<span class="crumb current">${labels[displayMode]}</span>`;return;
+  }
+  bc.innerHTML=`<span class="crumb" data-root="1">📁 All folders</span>
+    <span class="sep">›</span>
+    <span class="crumb current">${esc(currentFolder)}</span>`;
+  bc.querySelector("[data-root]").onclick=()=>{currentFolder=null;renderProducts()};
+}
+function renderProducts(){
+  renderBreadcrumb();updateModeTabs();
+  const box=$("#products");
+  const q=$("#search").value.trim().toLowerCase();
+  box.innerHTML="";
+  const filtered=Object.entries(filesCache)
+    .filter(([,f])=>[f.title,f.description,f.category,f.folder].join(" ").toLowerCase().includes(q));
+
+  if(displayMode==="folders"){
+    if(currentFolder===null){
+      const groups={};
+      Object.values(filesCache).forEach(f=>{(groups[f.folder]=groups[f.folder]||[]).push(f)});
+      const visible=Object.keys(groups).sort().filter(name=>{
+        if(!q)return true;
+        if(name.toLowerCase().includes(q))return true;
+        return groups[name].some(f=>[f.title,f.description,f.category].join(" ").toLowerCase().includes(q));
+      });
+      if(!visible.length){
+        box.innerHTML=`<div class="empty"><span class="ico">📂</span>${q?"No folders match search.":"No folders yet."}</div>`;
+        return;
+      }
+      visible.forEach(name=>box.append(makeFolderCard(name,groups[name].length)));
+      return;
+    }
+    const files=filtered.filter(([,f])=>f.folder===currentFolder)
+      .sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+    if(!files.length){
+      box.innerHTML=`<div class="empty"><span class="ico">📁</span>${q?"No files match.":"This folder is empty."}</div>`;
+      return;
+    }
+    files.forEach(([id,f])=>box.append(makeFileCard(id,f)));
+    return;
+  }
+
+  if(!filtered.length){
+    box.innerHTML=`<div class="empty"><span class="ico">📚</span>${q?"No files match search.":"No materials yet. Upload from the dock below."}</div>`;
+    return;
+  }
+  if(displayMode==="all"){
+    filtered.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0))
+      .forEach(([id,f])=>box.append(makeFileCard(id,f)));return;
+  }
+  if(displayMode==="date"){
+    filtered.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+    const groups={};
+    filtered.forEach(([id,f])=>{const k=dateOnly(f.createdAt);(groups[k]=groups[k]||[]).push([id,f])});
+    Object.keys(groups).forEach(k=>{
+      box.append(makeSectionLabel(`${k} · ${groups[k].length} file${groups[k].length!==1?"s":""}`));
+      groups[k].forEach(([id,f])=>box.append(makeFileCard(id,f)));
+    });return;
+  }
+  if(displayMode==="alpha"){
+    filtered.sort((a,b)=>a[1].title.localeCompare(b[1].title,undefined,{sensitivity:"base"}));
+    const groups={};
+    filtered.forEach(([id,f])=>{
+      const first=(f.title||"#").trim().charAt(0).toUpperCase();
+      const key=/[A-Z]/.test(first)?first:"#";
+      (groups[key]=groups[key]||[]).push([id,f]);
+    });
+    Object.keys(groups).sort((a,b)=>{if(a==="#")return 1;if(b==="#")return -1;return a.localeCompare(b)})
+      .forEach(k=>{
+        box.append(makeSectionLabel(`${k} · ${groups[k].length} file${groups[k].length!==1?"s":""}`));
+        groups[k].forEach(([id,f])=>box.append(makeFileCard(id,f)));
+      });return;
+  }
+  if(displayMode==="category"){
+    filtered.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+    const groups={};
+    filtered.forEach(([id,f])=>{const k=f.category||"Other";(groups[k]=groups[k]||[]).push([id,f])});
+    Object.keys(groups).sort().forEach(k=>{
+      box.append(makeSectionLabel(`${k} · ${groups[k].length} file${groups[k].length!==1?"s":""}`));
+      groups[k].forEach(([id,f])=>box.append(makeFileCard(id,f)));
+    });return;
+  }
+}
+$("#search").oninput=renderProducts;
+
+function updateFolderSuggestions(){
+  const dl=$("#folderList");
+  const names=[...new Set(Object.values(filesCache).map(f=>f.folder))].sort();
+  dl.innerHTML=names.map(n=>`<option value="${esc(n)}">`).join("");
+}
+
+/* ============ EDIT PANEL ============ */
+function openEditPanel(id,f){
+  document.querySelectorAll(".edit-panel").forEach(p=>p.remove());
+  const panel=document.createElement("div");
+  panel.className="edit-panel";
+  panel.innerHTML=`
+    <label class="muted">Title</label>
+    <input class="e-title" value="${esc(f.title)}">
+    <label class="muted">Description</label>
+    <textarea class="e-desc">${esc(f.description||"")}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label class="muted">Folder</label>
+        <input class="e-folder" list="folderList" value="${esc(f.folder)}">
+      </div>
+      <div>
+        <label class="muted">Category</label>
+        <select class="e-category">
+          <option value="">Auto</option>
+          ${["PDF","Document","Image","Video","Excel","HTML","Simulation","Other"]
+            .map(c=>`<option ${c===f.category?"selected":""}>${c}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <label class="muted">Logo / cover image</label>
+    <div class="logo-picker">
+      <div class="logo-preview" data-preview>
+        ${f.logo||isImage(f)?`<img src="${esc(f.logo||f.url)}">`:`<span class="empty-ico">🖼️</span>`}
+      </div>
+      <div class="logo-controls">
+        <div class="logo-btns">
+          <button type="button" class="btn sm secondary e-logo-upload">📤 Upload logo</button>
+          <button type="button" class="btn sm ghost e-logo-clear">Clear</button>
+        </div>
+        <div class="url-row" style="margin-top:4px">
+          <input class="e-logo" placeholder="…or paste image URL" value="${esc(f.logo||"")}">
+        </div>
+        <div class="logo-hint">Custom logo replaces the auto type-icon in the grid.</div>
+      </div>
+    </div>
+
+    <label class="muted" style="display:flex;align-items:center;gap:6px;margin-top:8px">
+      <input type="checkbox" class="e-sim" style="width:auto;margin:0" ${f.simulation?"checked":""}>
+      Simulation / interactive activity
+    </label>
+    <label class="muted">URL</label>
+    <input class="e-url" value="${esc(f.url)}">
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
+      <button class="btn ghost e-cancel">Cancel</button>
+      <button class="btn primary e-save">Save</button>
+    </div>
+  `;
+  const preview=panel.querySelector("[data-preview]");
+  const logoInput=panel.querySelector(".e-logo");
+
+  function refreshPreview(){
+    const v=logoInput.value.trim();
+    if(v)preview.innerHTML=`<img src="${esc(v)}" onerror="this.replaceWith(document.createTextNode('✕'))">`;
+    else preview.innerHTML=`<span class="empty-ico">🖼️</span>`;
+  }
+  logoInput.oninput=refreshPreview;
+
+  panel.querySelector(".e-logo-upload").onclick=()=>{
+    openLogoPicker((url)=>{
+      logoInput.value=url;
+      refreshPreview();
+    });
+  };
+  panel.querySelector(".e-logo-clear").onclick=()=>{logoInput.value="";refreshPreview()};
+
+  panel.querySelector(".e-cancel").onclick=()=>panel.remove();
+  panel.querySelector(".e-save").onclick=async()=>{
+    const payload={
+      title: panel.querySelector(".e-title").value.trim()||f.title,
+      description: panel.querySelector(".e-desc").value.trim(),
+      folder: panel.querySelector(".e-folder").value.trim()||"General",
+      category: panel.querySelector(".e-category").value||"Other",
+      simulation: panel.querySelector(".e-sim").checked,
+      url: panel.querySelector(".e-url").value.trim()||f.url,
+      logo: logoInput.value.trim()
+    };
+    try{await db.ref("files/"+id).update(payload);panel.remove();}
+    catch(e){alert("Save failed: "+e.message)}
+  };
+  $("#products").prepend(panel);
+  panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ============ LOGO PICKER ============ */
+let logoWidget=null;
+function openLogoPicker(cb){
+  if(!window.cloudinary){alert("Upload widget not loaded.");return}
+  if(!logoWidget){
+    logoWidget=cloudinary.createUploadWidget({
+      cloudName:CLOUDINARY_CLOUD,
+      uploadPreset:CLOUDINARY_PRESET,
+      folder:"rds_library/logos",
+      resourceType:"image",
+      multiple:false,
+      maxFileSize:5000000,
+      clientAllowedFormats:["jpg","jpeg","png","webp","svg","gif"],
+      cropping:true,
+      croppingAspectRatio:1,
+      showSkipCropButton:false,
+      croppingShowDimensions:true
+    },(err,res)=>{
+      if(err){alert("Logo upload error: "+(err.message||JSON.stringify(err)));return}
+      if(!res)return;
+      if(res.event==="success"){
+        cb(res.info.secure_url);
+      }
+    });
+  }
+  logoWidget.open();
+}
+// Upload modal logo button
+$("#upLogoUpload").onclick=()=>{
+  openLogoPicker((url)=>{
+    $("#upLogo").value=url;
+    refreshUpLogoPreview();
+  });
+};
+$("#upLogoClear").onclick=()=>{$("#upLogo").value="";refreshUpLogoPreview()};
+$("#upLogo").oninput=refreshUpLogoPreview;
+function refreshUpLogoPreview(){
+  const v=$("#upLogo").value.trim();
+  const el=$("#upLogoPreview");
+  if(v)el.innerHTML=`<img src="${esc(v)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'empty-ico',textContent:'✕'}))">`;
+  else el.innerHTML=`<span class="empty-ico">🖼️</span>`;
+}
+
+/* ============ UPLOAD ============ */
+const widgetCache={};
+function showUpMsg(txt,ok=false){const el=$("#upMsg");el.textContent=txt;el.className="up-msg "+(ok?"ok":"err")}
+function clearUpMsg(){$("#upMsg").textContent="";$("#upMsg").className="up-msg"}
+
+function buildWidget(kind){
+  if(widgetCache[kind])return widgetCache[kind];
+  if(!window.cloudinary){showUpMsg("Cloudinary not loaded.");return null}
+  const resourceType=(kind==="image"||kind==="video")?kind:"auto";
+  const cfg={cloudName:CLOUDINARY_CLOUD,uploadPreset:CLOUDINARY_PRESET,folder:"rds_library",
+    resourceType,multiple:true,maxFileSize:100000000};
+  if(kind==="pdf")cfg.clientAllowedFormats=["pdf","doc","docx","txt","rtf","odt"];
+  if(kind==="image")cfg.clientAllowedFormats=["jpg","jpeg","png","gif","webp","svg","bmp","avif"];
+  if(kind==="video")cfg.clientAllowedFormats=["mp4","webm","mov","m4v","ogg","avi"];
+  if(kind==="excel")cfg.clientAllowedFormats=["xlsx","xls","csv"];
+  if(kind==="html")cfg.clientAllowedFormats=["html","htm","zip"];
+
+  const w=cloudinary.createUploadWidget(cfg,(err,res)=>{
+    if(err){showUpMsg("Upload error: "+(err.message||JSON.stringify(err)),false);return}
+    if(!res)return;
+    if(res.event==="uploadprogress"){
+      const pct=Math.round(res.info?.progress||0);
+      $("#upProgress").classList.remove("hidden");
+      $("#upProgress").firstElementChild.style.width=pct+"%";
+      showUpMsg(`Uploading… ${pct}%`);
+    }
+    if(res.event==="success")saveUploaded(res.info);
+    if(res.event==="error")showUpMsg("Upload failed: "+(res.info?.error?.message||"unknown"),false);
+    if(res.event==="close")setTimeout(()=>$("#upProgress").classList.add("hidden"),400);
+  });
+  widgetCache[kind]=w;return w;
+}
+document.querySelectorAll(".upload-grid button[data-kind]").forEach(b=>{
+  b.onclick=()=>{
+    if(!admin)return;
+    const w=buildWidget(b.dataset.kind);
+    if(w)w.open();
+  };
+});
+async function saveUploaded(info){
+  const url=info.secure_url;
+  const ext=(info.format||extOf(url)||"").toLowerCase();
+  let name=info.original_filename||("file."+ext);
+  if(ext&&!name.toLowerCase().endsWith("."+ext))name+="."+ext;
+
+  const record={
+    title: $("#upTitle").value.trim() || name,
+    name,url,
+    folder: $("#upFolder").value.trim()||"General",
+    category: $("#upCategory").value||autoCategory(ext,info.resource_type),
+    description: $("#upDesc").value.trim(),
+    logo: $("#upLogo").value.trim(),
+    simulation: $("#upSim").checked,
+    by: admin.uid,
+    createdAt: Date.now(),
+    size: info.bytes,
+    format: ext
+  };
+  try{
+    await push("files",record);
+    showUpMsg("✅ Uploaded: "+name,true);
+    $("#upTitle").value="";
+    $("#upDesc").value="";
+    $("#upLogo").value="";
+    $("#upSim").checked=false;
+    refreshUpLogoPreview();
+    setTimeout(clearUpMsg,3500);
+  }catch(e){showUpMsg("Saved to Cloudinary but DB failed: "+e.message,false)}
+}
+function autoCategory(ext,rt){
+  if(rt==="image")return"Image";if(rt==="video")return"Video";
+  if(ext==="pdf")return"PDF";
+  if(["xlsx","xls","csv"].includes(ext))return"Excel";
+  if(["html","htm"].includes(ext))return"HTML";
+  if(["doc","docx","txt","rtf","odt"].includes(ext))return"Document";
+  return"Other";
+}
+$("#addLinkBtn").onclick=async()=>{
+  const url=$("#upUrl").value.trim();
+  if(!url)return showUpMsg("Enter a URL.",false);
+  try{new URL(url)}catch(e){return showUpMsg("Enter a valid URL.",false)}
+  const title=$("#upTitle").value.trim() || url.split("/").pop() || "Link";
+  try{
+    await push("files",{
+      title,url,
+      folder: $("#upFolder").value.trim()||"General",
+      category: $("#upCategory").value||"Link",
+      description: $("#upDesc").value.trim(),
+      logo: $("#upLogo").value.trim(),
+      simulation: $("#upSim").checked,
+      by: admin.uid,createdAt:Date.now()
+    });
+    $("#upUrl").value="";$("#upTitle").value="";$("#upDesc").value="";$("#upLogo").value="";
+    refreshUpLogoPreview();
+    showUpMsg("✅ Link added.",true);
+    setTimeout(clearUpMsg,2500);
+  }catch(e){showUpMsg("Could not add link: "+e.message,false)}
+};
+
+/* ============ SETTINGS ============ */
+$("#saveSettings").onclick=async()=>{
+  try{
+    await db.ref("settings").update({
+      title:$("#setTitle").value.trim(),
+      subtitle:$("#setSubtitle").value.trim(),
+      footer:$("#setFooter").value.trim(),
+      teacherName:$("#setTeacherName").value.trim(),
+      teacherBio:$("#setTeacherBio").value.trim(),
+      updatedAt:Date.now()
+    });
+    alert("Site details saved.");
+    closeModal("settingsModal");
+  }catch(e){alert("Save failed: "+e.message)}
+};
+
+/* ============ NOTICES ============ */
+$("#postNotice").onclick=async()=>{
+  const title=$("#noticeTitle").value.trim(),body=$("#noticeBody").value.trim();
+  if(!title||!body)return alert("Enter a title and message.");
+  try{
+    await push("notices",{
+      title,body,by:admin.uid,
+      byName:$("#setTeacherName").value.trim()||admin.email,
+      createdAt:Date.now()
+    });
+    $("#noticeTitle").value="";$("#noticeBody").value="";
+  }catch(e){alert("Could not publish: "+e.message)}
+};
+function renderNotices(data){
+  const box=$("#noticesList");if(!box)return;box.innerHTML="";
+  Object.entries(data).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0)).forEach(([id,n])=>{
+    const el=document.createElement("div");el.className="list-item";
+    el.innerHTML=`<div class="li-body"><b>${esc(n.title)}</b>
+      <div>${esc(n.body)}</div>
+      <div class="meta">${esc(date(n.createdAt))}</div></div>
+      <button class="btn sm danger">Delete</button>`;
+    el.querySelector("button").onclick=async()=>{
+      if(!confirm("Delete this notice?"))return;
+      try{await db.ref("notices/"+id).remove();}catch(e){alert(e.message)}
+    };
+    box.append(el);
+  });
+  if(!box.children.length)box.innerHTML='<p class="muted">No notices yet.</p>';
+}
+
+/* ============ COMMENTS ============ */
+function renderComments(data){
+  const box=$("#commentsList");if(!box)return;box.innerHTML="";
+  let count=0;
+  Object.entries(data).forEach(([fileId,rows])=>{
+    Object.entries(rows||{}).forEach(([id,c])=>{
+      count++;
+      const el=document.createElement("div");el.className="list-item";
+      el.innerHTML=`<div class="li-body">
+        <b>${esc(c.name||"Student")}</b>
+        <span class="meta">on ${esc(c.fileTitle||"material")} · ${esc(date(c.createdAt))}</span>
+        <div>${esc(c.text)}</div></div>
+        <button class="btn sm danger">Remove</button>`;
+      el.querySelector("button").onclick=async()=>{
+        try{await db.ref("comments/"+fileId+"/"+id).remove();}catch(e){alert(e.message)}
+      };
+      box.append(el);
+    });
+  });
+  if(!count)box.innerHTML='<p class="muted">No comments yet.</p>';
+}
+
+/* ============ CHATS ============ */
+let chatUnsub=null;
+function renderStudentList(data){
+  const box=$("#studentList");if(!box)return;box.innerHTML="";
+  const entries=Object.entries(data);
+  if(!entries.length){box.innerHTML='<p class="muted">No student conversations yet.</p>';return}
+  entries.forEach(([uid,conv])=>{
+    const u=conv.user||{};
+    const row=document.createElement("div");row.className="student-row";
+    const initial=(u.name||u.email||uid).trim().charAt(0).toUpperCase();
+    row.innerHTML=`
+      <div class="st-av">${esc(initial)}</div>
+      <div class="st-info"><b>${esc(u.name||u.email||uid)}</b>
+        <span>${esc(u.lastMessage||u.email||"No messages yet")}</span></div>`;
+    row.onclick=()=>openConversation(uid,u);
+    box.append(row);
+  });
+}
+$("#backToStudents").onclick=()=>{
+  $("#chatPanel").classList.add("hidden");
+  $("#studentList").classList.remove("hidden");
+  if(chatUnsub){chatUnsub();chatUnsub=null}
+};
+function openConversation(uid,u){
+  openChat=uid;
+  $("#studentList").classList.add("hidden");
+  $("#chatPanel").classList.remove("hidden");
+  $("#chatHeading").textContent=(u.name||u.email||uid);
+  const ref=db.ref("conversations/"+uid+"/messages");
+  if(chatUnsub)chatUnsub();
+  const cb=s=>{
+    const rows=s.val()||{},box=$("#chatThread");box.innerHTML="";
+    const arr=Object.values(rows).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    if(!arr.length)box.innerHTML='<p class="muted" style="text-align:center;padding:20px">No messages yet.</p>';
+    arr.forEach(m=>{
+      const mine=m.senderUid===admin.uid;
+      const d=document.createElement("div");
+      d.className="bubble "+(mine?"me":"them");
+      d.innerHTML=esc(m.text)+`<span class="time">${date(m.createdAt)}</span>`;
+      box.append(d);
+    });
+    box.scrollTop=box.scrollHeight;
+  };
+  ref.on("value",cb);
+  chatUnsub=()=>ref.off("value",cb);
+}
+$("#sendReply").onclick=async()=>{
+  const text=$("#replyText").value.trim();
+  if(!text||!openChat)return;
+  try{
+    await push("conversations/"+openChat+"/messages",{
+      text,senderUid:admin.uid,
+      senderName:$("#setTeacherName").value.trim()||admin.email,
+      createdAt:Date.now()
+    });
+    await db.ref("conversations/"+openChat+"/user").update({lastMessage:text,updatedAt:Date.now()});
+    $("#replyText").value="";
+  }catch(e){alert("Could not send: "+e.message)}
+};
+
+/* ============ MODALS ============ */
+function openModal(id){closeAllModals();$("#"+id).classList.add("open")}
+function closeModal(id){$("#"+id).classList.remove("open")}
+function closeAllModals(){
+  document.querySelectorAll(".modal-overlay").forEach(m=>m.classList.remove("open"));
+  if(chatUnsub){chatUnsub();chatUnsub=null}
+  $("#chatPanel").classList.add("hidden");
+  $("#studentList").classList.remove("hidden");
+}
+document.querySelectorAll("[data-close]").forEach(b=>{b.onclick=()=>closeModal(b.dataset.close)});
+document.querySelectorAll(".modal-overlay").forEach(m=>{
+  m.onclick=e=>{if(e.target===m)m.classList.remove("open")};
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAllModals()});
+
+$("#dockUpload").onclick=()=>openModal("uploadModal");
+$("#dockSettings").onclick=()=>openModal("settingsModal");
+$("#dockNotices").onclick=()=>openModal("noticesModal");
+$("#dockComments").onclick=()=>openModal("commentsModal");
+$("#dockChats").onclick=()=>openModal("chatsModal");
+
+/* init */
+setView(viewMode);
+updateModeTabs();
+refreshUpLogoPreview();
+</script>
+</body>
+</html>
