@@ -1,0 +1,154 @@
+<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>জৈব যৌগের রূপান্তর সিমুলেটর</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--cd:#fff;--tx:#1f2328;--mu:#59636e;--bd:#d0d7de;--ac:#0b5ed7;--ab:#e8f0fe;--ok:#1a7f37;--okb:#e6f6ea;--er:#b42318;--erb:#fdecea;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15181c;--cd:#1f2328;--tx:#e6edf3;--mu:#9aa4af;--bd:#3a424b;--ac:#6ea8fe;--ab:#1c2a44;--ok:#56d364;--okb:#16301e;--er:#ff8a80;--erb:#3a1d1a}}
+:root[data-theme="dark"]{--bg:#15181c;--cd:#1f2328;--tx:#e6edf3;--mu:#9aa4af;--bd:#3a424b;--ac:#6ea8fe;--ab:#1c2a44;--ok:#56d364;--okb:#16301e;--er:#ff8a80;--erb:#3a1d1a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,'Noto Sans Bengali','Segoe UI',sans-serif;line-height:1.6}
+.c{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:21px;text-align:center;margin:8px 0 14px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;background:var(--cd);color:var(--tx);border:1px solid var(--bd)}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.g{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+@media(max-width:520px){.g{grid-template-columns:1fr}}
+label{font-weight:600;font-size:14px;display:block;margin-bottom:4px}
+select,input{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+button.s{background:var(--ab);color:var(--ac)}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.row button{flex:1}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0;font-size:14px}
+.chip{background:var(--ab);color:var(--ac);padding:4px 10px;border-radius:99px;font-weight:600}
+.st{border-left:4px solid var(--ac);background:var(--ab);padding:12px;border-radius:8px;margin-bottom:10px}
+.st .h{font-weight:700;margin-bottom:4px}
+.tag{font-size:12px;border:1px solid var(--ac);color:var(--ac);padding:0 8px;border-radius:99px;margin-left:4px;white-space:nowrap}
+.rg{background:var(--cd);padding:2px 8px;border-radius:6px;font-weight:600}
+.eq{font-family:Consolas,monospace;background:var(--cd);border:1px solid var(--bd);padding:8px;border-radius:6px;margin:6px 0;overflow-x:auto;white-space:nowrap}
+.st p{margin:4px 0 0;font-size:14px;color:var(--mu)}
+.alt{display:block;width:100%;text-align:left;margin-top:6px;background:var(--cd);color:var(--tx);border:1px solid var(--bd);font-weight:400;font-size:13px}
+.msg{padding:12px;border-radius:8px;background:var(--erb);color:var(--er)}
+.ok{background:var(--okb);color:var(--ok)}
+.op{display:block;width:100%;text-align:left;margin-top:8px;background:var(--cd);color:var(--tx);border:1px solid var(--bd);font-weight:400}
+.op.y{background:var(--okb);border-color:var(--ok)}.op.n{background:var(--erb);border-color:var(--er)}
+.sub{color:var(--mu);font-size:13px;margin:10px 0 0}details{margin-top:8px}summary{cursor:pointer;color:var(--ac);font-weight:600;font-size:14px}.ex{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-top:6px;font-size:14px;line-height:1.8}
+</style></head><body><div class="c">
+<h1>জৈব যৌগের রূপান্তর সিমুলেটর</h1>
+<div class="tabs"><button id="t1" class="on" onclick="tab(1)">সিমুলেটর</button><button id="t2" onclick="tab(2)">সব বিক্রিয়া</button><button id="t3" onclick="tab(3)">কুইজ</button></div>
+
+<div id="p1" class="card">
+<div class="g"><div><label for="s">শুরুর যৌগ</label><select id="s"></select></div><button class="s" onclick="swap()" aria-label="অদলবদল">⇄</button><div><label for="e">লক্ষ্য যৌগ</label><select id="e"></select></div></div>
+<div class="row"><button onclick="find()">পথ খুঁজুন</button><button class="s" onclick="rnd()">র‍্যান্ডম উদাহরণ</button></div>
+<div id="res"></div></div>
+
+<div id="p2" class="card" hidden>
+<div class="g" style="grid-template-columns:1fr 1fr"><div><label for="ft">বিক্রিয়ার ধরন</label><select id="ft" onchange="list()"></select></div><div><label for="fq">খুঁজুন</label><input id="fq" oninput="list()" placeholder="যৌগ বা বিকারক"></div></div>
+<p class="sub" id="cnt"></p><div id="ls"></div></div>
+
+<div id="p3" class="card" hidden>
+<div id="sc" class="sub" style="margin:0 0 8px"></div><div id="qq"></div></div>
+</div>
+<script>
+const N={alkane:'অ্যালকেন',alkene:'অ্যালকিন',alkyne:'অ্যালকাইন',alkyl_halide:'অ্যালকাইল হ্যালাইড',alcohol:'অ্যালকোহল',aldehyde:'অ্যালডিহাইড',carboxylic_acid:'কার্বক্সিলিক অ্যাসিড',ester:'এস্টার'};
+const F={alkane:'R–H',alkene:'C=C',alkyne:'C≡C',alkyl_halide:'R–X',alcohol:'R–OH',aldehyde:'R–CHO',carboxylic_acid:'R–COOH',ester:'R–COOR′'};
+const E=[
+['alkane','alkyl_halide','প্রতিস্থাপন','Cl₂ / Br₂, UV আলো (hν)','R–H + Cl₂ —hν→ R–Cl + HCl','মুক্তমূলক শৃঙ্খল বিক্রিয়া; H পরমাণু হ্যালোজেন দ্বারা প্রতিস্থাপিত হয়।'],
+['alkene','alkane','সংযোজন','H₂ / Ni বা Pt, তাপ','CH₂=CH₂ + H₂ —Ni→ CH₃–CH₃','ক্যাটালিটিক হাইড্রোজেনেশনে π-বন্ধন ভেঙে সম্পৃক্ত যৌগ হয়।'],
+['alkene','alkyl_halide','সংযোজন','HCl / HBr','CH₃CH=CH₂ + HBr → CH₃CHBrCH₃','মার্কভনিকভ নীতি: H যায় বেশি H-যুক্ত কার্বনে।'],
+['alkene','alcohol','সংযোজন','H₂O / লঘু H₂SO₄ (হাইড্রেশন)','CH₂=CH₂ + H₂O —H⁺→ CH₃CH₂OH','অ্যাসিড-অনুঘটিত পানি সংযোজন; মধ্যবর্তী ধাপে কার্বোক্যাটায়ন।'],
+['alkyne','alkene','সংযোজন','H₂ / লিন্ডলার অনুঘটক (Pd/BaSO₄)','HC≡CH + H₂ —Pd→ CH₂=CH₂','আংশিক হাইড্রোজেনেশন; বিক্রিয়া অ্যালকিনে থামে।'],
+['alkyne','alkane','সংযোজন','অতিরিক্ত H₂ / Ni, তাপ','HC≡CH + 2H₂ —Ni→ CH₃CH₃','দুটি π-বন্ধনই সম্পৃক্ত হয়।'],
+['alkyne','aldehyde','সংযোজন','H₂O / HgSO₄ + লঘু H₂SO₄, 60°C','HC≡CH + H₂O → [CH₂=CHOH] → CH₃CHO','ইনল থেকে টটোমারিজম; শুধু অ্যাসিটিলিন অ্যালডিহাইড দেয়, অন্যরা কিটোন।'],
+['alkyl_halide','alcohol','প্রতিস্থাপন','জলীয় KOH / NaOH','R–Cl + KOH(aq) → R–OH + KCl','নিউক্লিওফিলিক প্রতিস্থাপন (SN1/SN2)।'],
+['alkyl_halide','alkene','অপসারণ','অ্যালকোহলীয় KOH, তাপ','CH₃CH₂Cl + KOH(alc) —Δ→ CH₂=CH₂ + KCl + H₂O','E2 অপসারণ; সাইটজেফ নীতিতে বেশি প্রতিস্থাপিত অ্যালকিন প্রধান।'],
+['alkyl_halide','alkane','বিজারণ','Zn / HCl','R–Cl + 2[H] —Zn/HCl→ R–H + HCl','নবজাত হাইড্রোজেনে C–X বন্ধন বিজারিত হয়।'],
+['alcohol','alkyl_halide','প্রতিস্থাপন','SOCl₂ / PCl₅ / HX','R–OH + SOCl₂ → R–Cl + SO₂ + HCl','SOCl₂ সুবিধাজনক, কারণ উপজাত গ্যাস বেরিয়ে যায়।'],
+['alcohol','alkene','অপসারণ','গাঢ় H₂SO₄, 170°C','CH₃CH₂OH —H₂SO₄/170°C→ CH₂=CH₂ + H₂O','নিরুদন; 140°C-এ ইথার তৈরি হয়, তাই তাপমাত্রা গুরুত্বপূর্ণ।'],
+['alcohol','aldehyde','জারণ','PCC (বা Cu, 573 K)','R–CH₂OH + [O] —PCC→ R–CHO + H₂O','১° অ্যালকোহলের মৃদু জারণ অ্যালডিহাইডে থামে।'],
+['alcohol','carboxylic_acid','জারণ','KMnO₄ / K₂Cr₂O₇ + H₂SO₄','R–CH₂OH + 2[O] → R–COOH + H₂O','তীব্র জারকে অ্যালডিহাইড পেরিয়ে অ্যাসিড হয়।'],
+['aldehyde','carboxylic_acid','জারণ','K₂Cr₂O₇ / H₂SO₄ (টলেন, ফেলিং-ও চলে)','R–CHO + [O] → R–COOH','অ্যালডিহাইড সহজে জারিত হয়; টলেন বিকারকে রুপার দর্পণ পড়ে।'],
+['aldehyde','alcohol','বিজারণ','NaBH₄ / LiAlH₄ বা H₂ / Ni','R–CHO + 2[H] → R–CH₂OH','কার্বনিল কার্বনে হাইড্রাইড আক্রমণ করে ১° অ্যালকোহল দেয়।'],
+['carboxylic_acid','alcohol','বিজারণ','LiAlH₄, তারপর H₃O⁺','R–COOH + 4[H] → R–CH₂OH + H₂O','NaBH₄ কাজ করে না; শক্তিশালী LiAlH₄ লাগে।'],
+['carboxylic_acid','alkane','ডিকার্বক্সিলেশন','সোডালাইম (NaOH + CaO), তাপ','R–COONa + NaOH —CaO/Δ→ R–H + Na₂CO₃','এক কার্বন কম অ্যালকেন পাওয়া যায়।'],
+['carboxylic_acid','ester','এস্টারীকরণ','R′OH + গাঢ় H₂SO₄ (ফিশার)','R–COOH + R′OH ⇌ R–COOR′ + H₂O','সাম্যাবস্থার বিক্রিয়া; পানি সরালে উৎপাদ বাড়ে।'],
+['ester','carboxylic_acid','আর্দ্রবিশ্লেষণ','লঘু H₂SO₄ বা NaOH, তাপ','R–COOR′ + H₂O ⇌ R–COOH + R′OH','ক্ষারীয় আর্দ্রবিশ্লেষণ (সাবানীকরণ) অপ্রত্যাবর্তী।'],
+['ester','alcohol','বিজারণ','LiAlH₄','R–COOR′ + 4[H] → R–CH₂OH + R′OH','এস্টার ভেঙে দুটি অ্যালকোহল দেয়।']];
+const $=i=>document.getElementById(i),K=Object.keys(N),O={};K.forEach(k=>O[k]=E.filter(x=>x[0]===k));
+const opt='<option value="">— নির্বাচন করুন —</option>'+K.map(k=>`<option value="${k}">${N[k]} (${F[k]})</option>`).join('');
+$('s').innerHTML=opt;$('e').innerHTML=opt;
+const T=[...new Set(E.map(x=>x[2]))];
+$('ft').innerHTML='<option value="">সব ধরন</option>'+T.map(t=>`<option>${t}</option>`).join('');
+function tab(n){[1,2,3].forEach(i=>{$('p'+i).hidden=i!==n;$('t'+i).classList.toggle('on',i===n)});if(n===2)list();if(n===3&&!q)nq()}
+function swap(){const a=$('s').value;$('s').value=$('e').value;$('e').value=a;if($('s').value&&$('e').value)find()}
+function rnd(){const x=E[Math.random()*E.length|0];$('s').value=x[0];$('e').value=x[1];find()}
+function paths(a,b){const r=[];(function d(c,p,v){if(c===b){r.push(p);return}if(p.length>=5)return;O[c].forEach(x=>{if(!v.includes(x[1]))d(x[1],[...p,x],[...v,x[1]])})})(a,[],[a]);return r.sort((x,y)=>x.length-y.length)}
+const card=(x,i)=>`<div class="st"><div class="h">${i?`ধাপ ${i}: `:''}${N[x[0]]} → ${N[x[1]]} <span class="tag">${x[2]}</span></div><div><b>বিকারক:</b> <span class="rg">${x[3]}</span></div><div class="eq">${x[4]}</div><p>${x[5]}</p>${ex(x)}</div>`;
+const X=[
+['হ্যালোজেনেশন (মুক্তমূলক প্রতিস্থাপন)','(১) সূচনা: Cl–Cl —hν→ 2Cl•। (২) বৃদ্ধি: R–H + Cl• → R• + HCl; R• + Cl₂ → R–Cl + Cl•। (৩) সমাপ্তি: Cl• + Cl• → Cl₂, R• + Cl• → R–Cl।','ক্রিয়াশীলতা F₂ > Cl₂ > Br₂ > I₂; H-এর ক্ষেত্রে 3° > 2° > 1°। অতিরিক্ত Cl₂ হলে পলিহ্যালোজেনেটেড উৎপাদ হয়।'],
+['ক্যাটালিটিক হাইড্রোজেনেশন (সাবাতিয়ার-সেন্ডারেন্স)','H₂ ধাতুর পৃষ্ঠে শোষিত হয়ে পরমাণুতে ভাঙে; অ্যালকিনও পৃষ্ঠে শোষিত হয়; একই পাশ থেকে দুটি H যুক্ত হয় (সিন-সংযোজন)।','Ni লাগে 200–300°C-এ; Pt বা Pd সাধারণ তাপমাত্রায়ও কাজ করে। ক্রিয়াশীলতা: অ্যালকাইন > অ্যালকিন।'],
+['ইলেকট্রোফিলিক সংযোজন (মার্কভনিকভ নীতি)','(১) π-ইলেকট্রন H⁺-কে আক্রমণ করে স্থিতিশীল কার্বোক্যাটায়ন (3° > 2° > 1°) গঠন করে। (২) X⁻ কার্বোক্যাটায়নকে আক্রমণ করে উৎপাদ দেয়।','প্রোপিন + HBr → 2-ব্রোমোপ্রোপেন। পারক্সাইডের উপস্থিতিতে HBr-এর ক্ষেত্রে বিপরীত উৎপাদ হয় (কারাশ প্রভাব)।'],
+['হাইড্রেশন (ইলেকট্রোফিলিক সংযোজন)','(১) অ্যালকিন + H⁺ → কার্বোক্যাটায়ন। (২) H₂O আক্রমণ করে অক্সোনিয়াম আয়ন গঠন করে। (৩) H⁺ ত্যাগ করে অ্যালকোহল পাওয়া যায়।','মার্কভনিকভ নীতি মানে; ইথিন থেকে ইথানল হয়। হাইড্রোবোরেশন-জারণ পদ্ধতিতে বিপরীত (অ্যান্টি-মার্কভনিকভ) অ্যালকোহল পাওয়া যায়।'],
+['আংশিক হাইড্রোজেনেশন','লিন্ডলার অনুঘটকের (Pd/BaSO₄ + কুইনোলিন) পৃষ্ঠে দুটি H একই পাশ থেকে যুক্ত হয়ে সিস-অ্যালকিন দেয়।','Na / তরল NH₃ দিলে ট্রান্স-অ্যালকিন হয়। অনুঘটক বিষাক্ত করা হয় বলে বিক্রিয়া অ্যালকেন পর্যন্ত যায় না।'],
+['সম্পূর্ণ হাইড্রোজেনেশন','অ্যালকাইন → অ্যালকিন → অ্যালকেন: দুই ধাপে মোট ২ মোল H₂ যুক্ত হয়।','ইথাইন → ইথিন → ইথেন; অনুঘটক Ni, তাপমাত্রা 200–300°C।'],
+['কুচেরভ বিক্রিয়া (হাইড্রেশন)','(১) Hg²⁺ ও H⁺-এর উপস্থিতিতে পানি যুক্ত হয়ে অস্থির ইনল [CH₂=CHOH] তৈরি হয়। (২) কিটো-ইনল টটোমারিজমে ইনল → CH₃CHO।','মার্কভনিকভ নীতি মানে, তাই ইথাইন ছাড়া অন্য টার্মিনাল অ্যালকাইন থেকে কিটোন হয় (প্রোপাইন → প্রোপানোন)।'],
+['নিউক্লিওফিলিক প্রতিস্থাপন','SN2 (১° হ্যালাইড): OH⁻ পেছন দিক থেকে আক্রমণ করে এক ধাপে X⁻ বের করে, ত্রিমাত্রিক বিন্যাস উল্টে যায়। SN1 (3°): প্রথমে কার্বোক্যাটায়ন, পরে OH⁻ আক্রমণ।','জলীয় KOH-এ প্রতিস্থাপন, অ্যালকোহলীয় KOH-এ অপসারণ। এই পার্থক্য পরীক্ষায় প্রায়ই আসে।'],
+['ডিহাইড্রোহ্যালোজেনেশন (E2 অপসারণ)','অ্যালকোহলীয় KOH-এ C₂H₅O⁻ শক্তিশালী ক্ষার; β-কার্বনের H টেনে নেয়, একই সঙ্গে α-কার্বন থেকে X⁻ বের হয়ে C=C গঠিত হয়।','সাইটজেফ নীতি: বেশি অ্যালকাইল-প্রতিস্থাপিত অ্যালকিন প্রধান উৎপাদ। 2-ব্রোমোবিউটেন → বাট-২-ইন (প্রধান)।'],
+['বিজারণ','Zn + 2HCl → ZnCl₂ + 2[H]; নবজাত হাইড্রোজেন C–X বন্ধনে H বসায়।','বিকল্প বিজারক: LiAlH₄ বা H₂ / Pd।'],
+['হাইড্রক্সিল গ্রুপের প্রতিস্থাপন','R–OH + SOCl₂ → R–O–S(O)Cl → (Cl⁻ আক্রমণ) → R–Cl + SO₂↑ + HCl↑। PCl₅ হলে উপজাত POCl₃ ও HCl।','SOCl₂ পদ্ধতিতে উৎপাদ সহজে বিশুদ্ধ পাওয়া যায়, কারণ উপজাত গ্যাস। লুকাস পরীক্ষায় (ZnCl₂ + HCl) ক্রিয়াশীলতা 3° > 2° > 1°।'],
+['নিরুদন (E1 / E2)','(১) –OH-এ H⁺ যুক্ত হয়ে –OH₂⁺ হয়। (২) পানি বের হয়ে কার্বোক্যাটায়ন গঠিত হয়। (৩) পাশের কার্বন থেকে H⁺ বের হয়ে C=C তৈরি হয়।','170°C-এ অ্যালকিন, 140°C-এ (অ্যালকোহল বেশি থাকলে) ইথার। সহজতা 3° > 2° > 1°।'],
+['মৃদু জারণ','PCC (পিরিডিনিয়াম ক্লোরোক্রোমেট) দিয়ে, অথবা Cu-এর ওপর দিয়ে বাষ্প 573 K-এ চালিয়ে ডিহাইড্রোজেনেশনে: R–CH₂OH → R–CHO + H₂।','2° অ্যালকোহল জারিত হয়ে কিটোন দেয়; 3° সহজে জারিত হয় না। জলীয় জারকে অ্যালডিহাইড আরও জারিত হয়ে অ্যাসিড হয়ে যায়।'],
+['তীব্র জারণ','R–CH₂OH → [R–CHO] → R–COOH; অ্যালডিহাইড মধ্যবর্তী পর্যায়, আলাদা করা যায় না।','KMnO₄-এর বেগুনি রং বর্ণহীন হয়; K₂Cr₂O₇-এর কমলা রং সবুজ (Cr³⁺) হয়। রং বদলই জারণের প্রমাণ।'],
+['অ্যালডিহাইডের জারণ','টলেন বিকারক ([Ag(NH₃)₂]⁺): RCHO + 2Ag⁺ → RCOOH + 2Ag↓ (রুপার দর্পণ)। ফেলিং দ্রবণ: Cu²⁺ → Cu₂O (লাল অধঃক্ষেপ)।','কিটোন এই দুই পরীক্ষায় সাড়া দেয় না, তাই অ্যালডিহাইড শনাক্ত করা যায়। বেনজালডিহাইড ফেলিং দ্রবণে সাড়া দেয় না।'],
+['কার্বনিল গ্রুপের বিজারণ','(১) H⁻ (হাইড্রাইড) কার্বনিল কার্বনে নিউক্লিওফিলিক আক্রমণ করে অ্যালকক্সাইড আয়ন গঠন করে। (২) H₃O⁺ দিয়ে প্রোটন যুক্ত হয়ে R–CH₂OH পাওয়া যায়।','NaBH₄ মৃদু বিজারক (C=C-কে প্রভাবিত করে না)। LiAlH₄ শক্তিশালী; পানির সঙ্গে বিক্রিয়া করে বলে শুষ্ক ইথারে ব্যবহার করতে হয়।'],
+['কার্বক্সিলিক অ্যাসিডের বিজারণ','প্রথমে H⁻ অ্যাসিডের H-এর সঙ্গে বিক্রিয়া করে H₂ ও কার্বক্সিলেট লবণ দেয়; পরে আরও H⁻ যুক্ত হয়ে অ্যালডিহাইড স্তর পেরিয়ে R–CH₂O⁻ হয়; H₃O⁺ দিয়ে R–CH₂OH পাওয়া যায়।','NaBH₄ অ্যাসিডকে বিজারিত করতে পারে না। বিকল্প: ডাইবোরেন (B₂H₆)।'],
+['ডিকার্বক্সিলেশন','RCOONa + NaOH —CaO, Δ→ R–H + Na₂CO₃; CaO NaOH-কে শুষ্ক রাখে।','উৎপাদে মূল অ্যাসিডের চেয়ে ১টি কার্বন কম: CH₃COONa → CH₄। মিথেনের গবেষণাগার প্রস্তুতিতে ব্যবহৃত।'],
+['ফিশার এস্টারীকরণ','(১) H⁺ C=O-তে যুক্ত হয়ে কার্বনিল কার্বনকে আরও ইলেকট্রনাকর্ষী করে। (২) R′OH আক্রমণ করে টেট্রাহেড্রাল মধ্যবর্তী গঠন করে। (৩) প্রোটন স্থানান্তরের পর H₂O বের হয় ও H⁺ ত্যাগ করে এস্টার তৈরি হয়।','বিক্রিয়া উভমুখী; গাঢ় H₂SO₄ অনুঘটক ও নিরুদক। অ্যালকোহল বেশি নিলে বা পানি সরালে ফলন বাড়ে (লা শাতেলিয়ের নীতি)। এস্টারের ফলের মতো গন্ধ।'],
+['এস্টারের আর্দ্রবিশ্লেষণ','অম্লীয় মাধ্যমে ফিশার বিক্রিয়ার বিপরীত, সাম্যাবস্থা। ক্ষারীয় মাধ্যমে (NaOH): OH⁻ কার্বনিল কার্বনে আক্রমণ করে RCOO⁻ + R′OH দেয়; অ্যাসিড লবণে পরিণত হয় বলে বিক্রিয়া অপ্রত্যাবর্তী।','ক্ষারীয় আর্দ্রবিশ্লেষণকে সাবানীকরণ বলে (তেল বা চর্বি + NaOH → সাবান + গ্লিসারল)।'],
+['এস্টারের বিজারণ','LiAlH₄-এর H⁻ যুক্ত হয়ে R′O⁻ বের করে অ্যালডিহাইড দেয়; অ্যালডিহাইড সঙ্গে সঙ্গে আবার বিজারিত হয়ে R–CH₂O⁻ হয়; H₃O⁺ দিয়ে R–CH₂OH + R′OH পাওয়া যায়।','NaBH₄ সাধারণত এস্টারকে বিজারিত করে না। দুটি অ্যালকোহল পাওয়া যায়, একটি অ্যাসিড অংশ থেকে, অন্যটি অ্যালকোহল অংশ থেকে।']];
+const Y=[
+'ভাঙে: C–H ও Cl–Cl। গঠিত হয়: C–Cl ও H–Cl। সম্পৃক্ত যৌগ সম্পৃক্তই থাকে, শুধু একটি H-এর জায়গায় Cl বসে। UV আলো ছাড়া বিক্রিয়া শুরু হয় না। Cl₂-এর হলুদ-সবুজ রঙ কমে যায় ও HCl গ্যাস বের হয়।',
+'ভাঙে: C=C-এর π-বন্ধন ও H–H। গঠিত হয়: দুটি নতুন C–H σ-বন্ধন। অসম্পৃক্ত যৌগ সম্পৃক্ত হয়, কার্বনের সংকরায়ন sp² → sp³। H₂ খরচ হয় বলে গ্যাসের আয়তন কমে।',
+'ভাঙে: π-বন্ধন ও H–X। গঠিত হয়: একটি C–H ও একটি C–X। কোনো উপজাত নেই, সব পরমাণু উৎপাদে যায়। অসম্পৃক্ত যৌগ সম্পৃক্ত অ্যালকাইল হ্যালাইডে বদলায়।',
+'ভাঙে: π-বন্ধন ও পানির H–OH। গঠিত হয়: C–H ও C–OH। C=C লুপ্ত হয়ে –OH কার্যকরী গ্রুপ আসে। অনুঘটক H⁺ শেষে অক্ষত ফিরে আসে।',
+'ভাঙে: C≡C-এর একটি π-বন্ধন ও H–H। গঠিত হয়: দুটি C–H। বন্ধন ক্রম ৩ → ২ (sp → sp²)। অনুঘটক বিষাক্ত বলে বিক্রিয়া অ্যালকিনে থেমে যায়।',
+'ভাঙে: দুটি π-বন্ধন ও দুই অণু H–H। গঠিত হয়: চারটি C–H। বন্ধন ক্রম ৩ → ২ → ১ (sp → sp²→ sp³)। সম্পূর্ণ সম্পৃক্ত যৌগ পাওয়া যায়।',
+'ভাঙে: C≡C-এর একটি π-বন্ধন ও পানির H–OH। গঠিত হয়: C–O ও C–H, তারপর টটোমারিজমে O–H-এর H সরে C=O তৈরি হয়। C≡C লুপ্ত হয়ে C=O কার্যকরী গ্রুপ আসে।',
+'ভাঙে: C–X। গঠিত হয়: C–OH। X⁻ ছেড়ে KX তৈরি হয়, কার্বন কঙ্কাল অপরিবর্তিত থাকে। পরে AgNO₃ দিলে AgX অধঃক্ষেপে হ্যালাইড আয়নের প্রমাণ মেলে।',
+'ভাঙে: C–X ও পাশের কার্বনের C–H। গঠিত হয়: C=C, সঙ্গে KX ও H₂O উপজাত। সম্পৃক্ত যৌগ অসম্পৃক্ত হয়।',
+'ভাঙে: C–X। গঠিত হয়: C–H। ZnCl₂ উপজাত। হ্যালোজেন সরে গিয়ে সেখানে H বসে, কার্বন কঙ্কাল একই থাকে।',
+'ভাঙে: C–OH-এর C–O বন্ধন। গঠিত হয়: C–Cl। –OH-এর জায়গায় –Cl বসে। SOCl₂ হলে SO₂ ও HCl গ্যাস বেরিয়ে যায়, উৎপাদ সহজে বিশুদ্ধ থাকে।',
+'ভাঙে: C–OH-এর C–O ও পাশের C–H। গঠিত হয়: C=C ও H₂O। সম্পৃক্ত যৌগ অসম্পৃক্ত হয়। গাঢ় H₂SO₄ একই সঙ্গে অনুঘটক ও নির্জলকারক।',
+'ভাঙে: O–H ও কার্বিনল কার্বনের C–H। গঠিত হয়: C=O। দুটি H সরে যায়, কার্বনের জারণ সংখ্যা –১ → +১। জারক বিজারিত হয় (K₂Cr₂O₇-এর কমলা থেকে সবুজ)।',
+'ভাঙে: দুটি C–H ও O–H। গঠিত হয়: C=O ও আরেকটি C–OH (দুই ধাপে)। কার্বনের জারণ সংখ্যা –১ → +৩। KMnO₄-এর বেগুনি রঙ মিলিয়ে যায়।',
+'ভাঙে: কার্বনিল C–H। গঠিত হয়: C–OH। একটি O পরমাণু যুক্ত হয়, জারণ সংখ্যা +১ → +৩। টলেনে রুপার দর্পণ, ফেলিং-এ লাল Cu₂O অধঃক্ষেপ পড়ে।',
+'ভাঙে: C=O-এর π-বন্ধন। গঠিত হয়: C–H ও O–H (অর্থাৎ H₂ যুক্ত)। C=O থেকে C–OH, কার্বনের জারণ সংখ্যা +১ → –১।',
+'ভাঙে: C=O-এর π-বন্ধন ও C–OH-এর C–O। গঠিত হয়: দুটি নতুন C–H। অ্যাসিডের একটি O পানির অণুতে চলে যায়, আর –COOH থেকে –CH₂OH পাওয়া যায়।',
+'ভাঙে: R–COO বন্ধন। গঠিত হয়: R–H ও Na₂CO₃। কার্বক্সিল গ্রুপ কার্বনেট রূপে বেরিয়ে যায়, ফলে উৎপাদে কার্বন ১টি কম থাকে।',
+'ভাঙে: অ্যাসিডের C–OH-এর C–O ও অ্যালকোহলের O–H। গঠিত হয়: C–OR′ ও H₂O। অ্যাসিডের –OH আর অ্যালকোহলের H মিলে পানি হয়। ফলে এস্টারের ফলের মতো গন্ধ পাওয়া যায়।',
+'ভাঙে: অ্যাসাইল C–OR′ বন্ধন। গঠিত হয়: C–OH ও R′–OH। পানির –OH অ্যাসিডে আর H অ্যালকোহলে যায়। ক্ষারে অ্যাসিড লবণ (RCOO⁻) হয়ে যায়।',
+'ভাঙে: C=O-এর π-বন্ধন ও C–OR′। গঠিত হয়: দুটি নতুন C–H। এক অণু এস্টার ভেঙে দুই অণু অ্যালকোহল দেয়: একটি R–CH₂OH ও একটি R′OH।'];
+const ex=x=>{const e=X[E.indexOf(x)];return e?`<details><summary>পরীক্ষার উত্তর (বিস্তারিত)</summary><div class="ex"><b>বিক্রিয়ার নাম:</b> ${e[0]}<br><b>বিক্রিয়ায় কী ঘটছে:</b> ${Y[E.indexOf(x)]||''}<br><b>কৌশল / ধাপ:</b> ${e[1]}<br><b>গুরুত্বপূর্ণ তথ্য:</b> ${e[2]}</div></details>`:''};
+let PS=[];
+function find(){const a=$('s').value,b=$('e').value,r=$('res');
+if(!a||!b){r.innerHTML='<div class="msg" style="margin-top:12px">দুটি যৌগই নির্বাচন করুন।</div>';return}
+if(a===b){r.innerHTML='<div class="msg" style="margin-top:12px">শুরু ও লক্ষ্য যৌগ আলাদা হতে হবে।</div>';return}
+PS=paths(a,b);if(!PS.length){r.innerHTML='<div class="msg" style="margin-top:12px">৫ ধাপের মধ্যে কোনো পথ পাওয়া যায়নি।</div>';return}show(0)}
+function show(i){const p=PS[i],n=PS.length;
+const chain=[p[0][0],...p.map(x=>x[1])].map(k=>`<span class="chip">${N[k]}</span>`).join(' → ');
+let h=`<div class="chain">${chain}</div><div class="msg ok" style="margin-bottom:10px">${i?`বিকল্প পথ ${i}`:'সবচেয়ে ছোট পথ'}: মোট ${p.length} ধাপ</div>`+p.map((x,j)=>card(x,j+1)).join('');
+if(n>1)h+='<p class="sub">অন্যান্য পথ (ট্যাপ করুন):</p>'+PS.slice(0,6).map((q,j)=>j===i?'':`<button class="alt" onclick="show(${j})">${q.length} ধাপ: ${[q[0][0],...q.map(x=>x[1])].map(k=>N[k]).join(' → ')}</button>`).join('');
+$('res').innerHTML=h}
+function list(){const t=$('ft').value,s=$('fq').value.trim().toLowerCase();
+const r=E.filter(x=>(!t||x[2]===t)&&(!s||(N[x[0]]+N[x[1]]+x[3]+x[4]+x[0]+x[1]).toLowerCase().includes(s)));
+$('cnt').textContent=`${r.length}টি বিক্রিয়া`;$('ls').innerHTML=r.map(x=>card(x,0)).join('')||'<div class="msg">কিছু পাওয়া যায়নি।</div>'}
+let q,qo,sc=0,tot=0,done=0;
+function nq(){q=E[Math.random()*E.length|0];done=0;
+const w=[...new Set(E.map(x=>x[3]))].filter(r=>r!==q[3]).sort(()=>Math.random()-.5).slice(0,3);
+qo=[q[3],...w].sort(()=>Math.random()-.5);
+$('sc').textContent=`স্কোর: ${sc} / ${tot}`;
+$('qq').innerHTML=`<p><b>${N[q[0]]} → ${N[q[1]]}</b> রূপান্তরের সঠিক বিকারক কোনটি?</p>`+qo.map((r,i)=>`<button class="op" onclick="ans(${i})">${r}</button>`).join('')+'<div id="fb"></div>'}
+function ans(i){if(done)return;done=1;tot++;const ok=qo[i]===q[3];if(ok)sc++;
+document.querySelectorAll('.op').forEach((b,j)=>{if(qo[j]===q[3])b.classList.add('y');else if(j===i)b.classList.add('n')});
+$('sc').textContent=`স্কোর: ${sc} / ${tot}`;
+$('fb').innerHTML=`<div class="msg ${ok?'ok':''}" style="margin-top:10px">${ok?'সঠিক!':'ভুল।'}</div>`+card(q,0)+'<button onclick="nq()" style="width:100%">পরের প্রশ্ন</button>'}
+</script></body></html>
