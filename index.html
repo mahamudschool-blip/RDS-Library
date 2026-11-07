@@ -576,7 +576,8 @@ function badgeFor(f){
   return {pdf:"PDF",image:"IMG",video:"VID",excel:"XLS",html:"HTML",doc:"DOC",other:"FILE"}[k]||"FILE";
 }
 function thumbHTML(f){
-  if(isImage(f))return `<img src="${esc(f.url)}" loading="lazy" onerror="this.remove()">`;
+  if(f.logo)return `<img src="${esc(f.logo)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${badgeFor(f)}'))">`;
+  if(isImage(f))return `<img src="${esc(f.url)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${badgeFor(f)}'))">`;
   return esc(badgeFor(f));
 }
 
