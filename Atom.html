@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>বোর পারমাণবিক মডেল ও আয়ন সিমুলেশন</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{font-family:'Hind Siliguri',system-ui,sans-serif;user-select:none}
+body{background:#eef2f7}
+input[type=range]{-webkit-appearance:none;background:transparent;width:100%}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:#dbe3ee;border-radius:9999px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:24px;width:24px;margin-top:-8px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 1px 6px rgba(37,99,235,.5)}
+input[type=range]::-moz-range-track{height:8px;background:#dbe3ee;border-radius:9999px}
+input[type=range]::-moz-range-thumb{height:20px;width:20px;border:3px solid #fff;border-radius:50%;background:#2563eb}
+.cell{transition:transform .15s}.cell:active{transform:scale(.9)}
+.bar{transition:width .35s ease}
+</style>
+</head>
+<body class="text-slate-800 min-h-screen flex justify-center p-2">
+<div class="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+
+  <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+    <div>
+      <h1 class="font-bold text-base leading-tight">বোর পারমাণবিক মডেল</h1>
+      <p class="text-[11px] text-blue-100">পরমাণু ও আয়ন সিমুলেশন • Z = ১ – ১১৮</p>
+    </div>
+    <button id="infoBtn" class="w-8 h-8 rounded-full bg-white/20 text-lg leading-none active:scale-95" aria-label="তথ্য">ⓘ</button>
+  </div>
+
+  <div class="relative w-full h-[310px] bg-gradient-to-b from-white to-slate-100">
+    <canvas id="atomCanvas" class="w-full h-full"></canvas>
+    <div class="absolute top-2 right-2 bg-white/95 border border-slate-200 shadow-sm text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+      <span class="text-slate-500">চার্জ:</span><span id="chargeBadge" class="font-bold px-2 py-0.5 rounded border"></span>
+    </div>
+    <div id="legend" class="absolute top-2 left-2 flex flex-col gap-0.5 text-[10px] text-slate-500 bg-white/90 border border-slate-200 rounded-lg px-2 py-1"></div>
+    <div id="infoPanel" class="hidden absolute inset-x-3 top-12 bg-white border border-slate-300 shadow-lg rounded-xl p-3 text-xs leading-relaxed z-10">
+      <b class="text-blue-700">কীভাবে ব্যবহার করবেন</b><br>
+      • স্লাইডার টেনে বা সারণিতে ট্যাপ করে মৌল বদলান।<br>
+      • <b>− e⁻</b> চাপলে ক্যাটায়ন (ধনাত্মক আয়ন), <b>+ e⁻</b> চাপলে অ্যানায়ন (ঋণাত্মক আয়ন) তৈরি হয়।<br>
+      • আয়ন হলেও প্রোটন সংখ্যা (Z) অপরিবর্তিত থাকে; শুধু ইলেকট্রন বদলায়।<br>
+      • কক্ষপথে সর্বোচ্চ ইলেকট্রন = 2n² (K=২, L=৮, M=১৮, N=৩২, O=৫০ …)।
+      <button id="closeInfo" class="block mt-2 text-blue-600 font-semibold">বন্ধ করুন</button>
+    </div>
+    <div class="absolute bottom-2 left-2 right-2 flex justify-between items-end text-xs pointer-events-none">
+      <div class="bg-white/95 border border-slate-200 shadow-sm px-2.5 py-1 rounded-lg">প্রোটন: <b id="pCount" class="text-red-600"></b> &nbsp;ইলেকট্রন: <b id="eCount" class="text-blue-600"></b></div>
+      <div id="ionName" class="bg-white/95 border border-slate-200 shadow-sm text-indigo-700 px-2.5 py-1 rounded-lg font-semibold"></div>
+    </div>
+  </div>
+
+  <div class="p-3 space-y-3">
+
+    <div class="flex items-center gap-3">
+      <div id="tile" class="w-20 h-20 shrink-0 rounded-xl border-2 flex flex-col items-center justify-center relative">
+        <span id="tZ" class="absolute top-1 left-1.5 text-[11px] font-bold text-slate-600"></span>
+        <span id="tM" class="absolute top-1 right-1.5 text-[10px] text-slate-500"></span>
+        <span id="tSym" class="text-3xl font-bold leading-none"></span>
+        <span id="tBn" class="text-[10px] mt-1 text-slate-600 text-center leading-tight px-1"></span>
+      </div>
+      <div class="min-w-0">
+        <h2 id="title" class="text-base font-bold leading-snug"></h2>
+        <div class="text-xs text-slate-600 mt-1 flex flex-wrap gap-x-3">
+          <span>পর্যায়: <b id="period" class="text-slate-900"></b></span><span>গ্রুপ: <b id="group" class="text-slate-900"></b></span>
+        </div>
+        <span id="cat" class="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"></span>
+      </div>
+    </div>
+
+    <div>
+      <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1"><label for="zSlider">পারমাণবিক সংখ্যা (Z)</label><span id="zVal" class="text-blue-600 font-bold text-sm"></span></div>
+      <input type="range" id="zSlider" min="1" max="118" value="10">
+      <div class="flex justify-between text-[10px] text-slate-400"><span>১ (H)</span><span>৩০ (Zn)</span><span>৬০ (Nd)</span><span>৯০ (Th)</span><span>১১৮ (Og)</span></div>
+    </div>
+
+    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+      <div class="text-xs font-semibold mb-2 text-slate-700">আয়ন গঠন <span class="font-normal text-slate-400">— ইলেকট্রন যোগ/সরান</span></div>
+      <div class="grid grid-cols-4 gap-2">
+        <button id="removeE" class="py-2 bg-rose-50 border border-rose-300 text-rose-700 rounded-lg text-xs font-bold active:scale-95">− e⁻</button>
+        <button id="addE" class="py-2 bg-emerald-50 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-bold active:scale-95">+ e⁻</button>
+        <button id="commonIon" class="py-2 bg-indigo-50 border border-indigo-300 text-indigo-700 rounded-lg text-xs font-bold active:scale-95">সাধারণ আয়ন</button>
+        <button id="resetIon" class="py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-xs font-bold active:scale-95">↺ রিসেট</button>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button id="playBtn" class="flex-1 py-1.5 bg-amber-50 border border-amber-300 text-amber-700 rounded-lg text-xs font-semibold active:scale-95">❚❚ থামান</button>
+        <button id="resetBtn" class="flex-1 py-1.5 bg-white border border-slate-300 text-slate-600 rounded-lg text-xs font-semibold active:scale-95">⟳ ঘূর্ণন রিসেট</button>
+      </div>
+    </div>
+
+    <div id="stats" class="grid grid-cols-3 gap-2 text-center"></div>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+      <div class="text-xs font-semibold text-slate-700 mb-2">ইলেকট্রন বিন্যাস</div>
+      <div id="bars" class="space-y-1.5"></div>
+      <div id="shellText" class="mt-2 text-[12px] font-semibold text-slate-700"></div>
+    </div>
+
+    <div id="stable" class="rounded-xl border p-3 text-xs leading-relaxed"></div>
+
+    <div>
+      <div class="text-xs font-semibold text-slate-700 mb-1">পর্যায় সারণি ১–১১৮ (ট্যাপ করে মৌল বেছে নিন)</div>
+      <div class="overflow-x-auto pb-1">
+        <div id="ptable" class="grid gap-[3px] min-w-[560px]" style="grid-template-columns:repeat(18,1fr);grid-template-rows:repeat(7,auto) 8px repeat(2,auto)"></div>
+      </div>
+      <div id="catLegend" class="flex flex-wrap gap-x-2 gap-y-1 mt-2 text-[10px] text-slate-600"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MASS=[1,4,7,9,11,12,14,16,19,20,23,24,27,28,31,32,35,40,39,40,45,48,51,52,55,56,59,58,63,64,69,74,75,80,79,84,85,88,89,90,93,98,98,102,103,106,107,114,115,120,121,130,127,132,133,138,139,140,141,142,145,152,153,158,159,164,165,166,169,174,175,180,181,184,187,192,193,195,197,202,205,208,209,209,210,222,223,226,227,232,231,238,237,244,243,247,247,251,252,257,258,259,266,267,268,269,270,277,278,281,282,285,286,289,290,293,294,294];
+const SYM='H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og'.split(' ');
+const EN='Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon Phosphorus Sulfur Chlorine Argon Potassium Calcium Scandium Titanium Vanadium Chromium Manganese Iron Cobalt Nickel Copper Zinc Gallium Germanium Arsenic Selenium Bromine Krypton Rubidium Strontium Yttrium Zirconium Niobium Molybdenum Technetium Ruthenium Rhodium Palladium Silver Cadmium Indium Tin Antimony Tellurium Iodine Xenon Caesium Barium Lanthanum Cerium Praseodymium Neodymium Promethium Samarium Europium Gadolinium Terbium Dysprosium Holmium Erbium Thulium Ytterbium Lutetium Hafnium Tantalum Tungsten Rhenium Osmium Iridium Platinum Gold Mercury Thallium Lead Bismuth Polonium Astatine Radon Francium Radium Actinium Thorium Protactinium Uranium Neptunium Plutonium Americium Curium Berkelium Californium Einsteinium Fermium Mendelevium Nobelium Lawrencium Rutherfordium Dubnium Seaborgium Bohrium Hassium Meitnerium Darmstadtium Roentgenium Copernicium Nihonium Flerovium Moscovium Livermorium Tennessine Oganesson'.split(' ');
+const BNN='হাইড্রোজেন|হিলিয়াম|লিথিয়াম|বেরিলিয়াম|বোরন|কার্বন|নাইট্রোজেন|অক্সিজেন|ফ্লুরিন|নিয়ন|সোডিয়াম|ম্যাগনেসিয়াম|অ্যালুমিনিয়াম|সিলিকন|ফসফরাস|সালফার|ক্লোরিন|আর্গন|পটাশিয়াম|ক্যালসিয়াম|স্ক্যানডিয়াম|টাইটানিয়াম|ভ্যানাডিয়াম|ক্রোমিয়াম|ম্যাঙ্গানিজ|লোহা (আয়রন)|কোবাল্ট|নিকেল|তামা (কপার)|দস্তা (জিংক)|গ্যালিয়াম|জার্মেনিয়াম|আর্সেনিক|সেলেনিয়াম|ব্রোমিন|ক্রিপ্টন|রুবিডিয়াম|স্ট্রনশিয়াম|ইট্রিয়াম|জিরকোনিয়াম|নাইওবিয়াম|মলিবডেনাম|টেকনেশিয়াম|রুথেনিয়াম|রোডিয়াম|প্যালাডিয়াম|রুপা (সিলভার)|ক্যাডমিয়াম|ইন্ডিয়াম|টিন (রাং)|অ্যান্টিমনি|টেলুরিয়াম|আয়োডিন|জেনন|সিজিয়াম|বেরিয়াম|ল্যান্থানাম|সেরিয়াম|প্রাসিওডিমিয়াম|নিওডিমিয়াম|প্রোমিথিয়াম|সামারিয়াম|ইউরোপিয়াম|গ্যাডোলিনিয়াম|টারবিয়াম|ডিসপ্রোসিয়াম|হলমিয়াম|আরবিয়াম|থুলিয়াম|ইটারবিয়াম|লুটেশিয়াম|হ্যাফনিয়াম|ট্যান্টালাম|টাংস্টেন|রেনিয়াম|অসমিয়াম|ইরিডিয়াম|প্লাটিনাম|সোনা (গোল্ড)|পারদ (মার্কারি)|থ্যালিয়াম|সীসা (লেড)|বিসমাথ|পোলোনিয়াম|অ্যাস্টাটিন|রেডন|ফ্রান্সিয়াম|রেডিয়াম|অ্যাক্টিনিয়াম|থোরিয়াম|প্রোটঅ্যাক্টিনিয়াম|ইউরেনিয়াম|নেপচুনিয়াম|প্লুটোনিয়াম|অ্যামেরিসিয়াম|কিউরিয়াম|বার্কেলিয়াম|ক্যালিফোর্নিয়াম|আইনস্টাইনিয়াম|ফার্মিয়াম|মেন্ডেলেভিয়াম|নোবেলিয়াম|লরেন্সিয়াম|রাদারফোর্ডিয়াম|ডুবনিয়াম|সিবোর্গিয়াম|বোরিয়াম|হাসিয়াম|মেইটনেরিয়াম|ডার্মস্টাডটিয়াম|রন্টজেনিয়াম|কোপার্নিসিয়াম|নিহোনিয়াম|ফ্লেরোভিয়াম|মস্কোভিয়াম|লিভারমোরিয়াম|টেনেসিন|অগানেসন'.split('|');
+const R=(p,t)=>t.split(' ').map(x=>(p+','+x).split(',').map(Number));
+const SH=[[1],[2]].concat(R('2','1 2 3 4 5 6 7 8'),R('2,8','1 2 3 4 5 6 7 8'),R('2,8,8','1 2'),
+R('2,8','9,2 10,2 11,2 13,1 13,2 14,2 15,2 16,2 18,1 18,2'),R('2,8,18','3 4 5 6 7 8'),R('2,8,18,8','1 2'),
+R('2,8,18','9,2 10,2 12,1 13,1 13,2 15,1 16,1 18'),R('2,8,18,18','1 2 3 4 5 6 7 8'),R('2,8,18,18,8','1 2'),
+R('2,8,18','18,9,2 19,9,2 21,8,2 22,8,2 23,8,2 24,8,2 25,8,2 25,9,2 27,8,2 28,8,2 29,8,2 30,8,2 31,8,2 32,8,2 32,9,2'),
+R('2,8,18,32','10,2 11,2 12,2 13,2 14,2 15,2 17,1 18,1 18,2'),R('2,8,18,32,18','3 4 5 6 7 8'),R('2,8,18,32,18,8','1 2'),
+R('2,8,18,32','18,9,2 18,10,2 20,9,2 21,9,2 22,9,2 24,8,2 25,8,2 25,9,2 27,8,2 28,8,2 29,8,2 30,8,2 31,8,2 32,8,2 32,8,3'),
+R('2,8,18,32,32','10,2 11,2 12,2 13,2 14,2 15,2 17,1 18,1 18,2 18,3 18,4 18,5 18,6 18,7 18,8'));
+const FB=z=>(z>=57&&z<=71)||(z>=89&&z<=103);
+const NOBLE=[2,10,18,36,54,86,118];
+const period=z=>z<=2?1:z<=10?2:z<=18?3:z<=36?4:z<=54?5:z<=86?6:7;
+function grp(z){
+  if(z===1)return 1; if(z===2)return 18; if(FB(z))return 0;
+  const p=period(z), k=z-[0,0,2,10,18,36,54,86][p];
+  if(p<=3)return k<=2?k:k+10;
+  if(p<=5)return k;
+  return k<=2?k:k-14;
+}
+function cat(z){
+  if(NOBLE.includes(z))return 'নিষ্ক্রিয় গ্যাস';
+  if([3,11,19,37,55,87].includes(z))return 'ক্ষার ধাতু';
+  if([4,12,20,38,56,88].includes(z))return 'মৃৎক্ষার ধাতু';
+  if([9,17,35,53,85,117].includes(z))return 'হ্যালোজেন';
+  if([5,14,32,33,51,52].includes(z))return 'অপধাতু';
+  if([1,6,7,8,15,16,34].includes(z))return 'অধাতু';
+  if(z>=57&&z<=71)return 'ল্যান্থানাইড';
+  if(z>=89&&z<=103)return 'অ্যাক্টিনাইড';
+  if([13,31,49,50,81,82,83,84,113,114,115,116].includes(z))return 'সংক্রমণ পরবর্তী ধাতু';
+  return 'অবস্থান্তর ধাতু';
+}
+const CIX={21:['+3',3],22:['+4',4],23:['+2 / +3',3],24:['+2 / +3',3],25:['+2 / +4',2],26:['+2 / +3',2],27:['+2 / +3',2],28:['+2',2],29:['+1 / +2',2],30:['+2',2],
+39:['+3',3],40:['+4',4],41:['+5',5],42:['+6',6],43:['+7',7],44:['+3',3],45:['+3',3],46:['+2',2],47:['+1',1],48:['+2',2],
+72:['+4',4],73:['+5',5],74:['+6',6],75:['+7',7],76:['+4',4],77:['+3 / +4',3],78:['+2 / +4',2],79:['+1 / +3',3],80:['+1 / +2',2],81:['+1 / +3',1],90:['+4',4],92:['+4 / +6',4]};
+function ionOf(z,g){
+  if(CIX[z])return CIX[z];
+  if(NOBLE.includes(z))return['নিষ্ক্রিয়',0];
+  if(z>=104)return['অজানা',0];
+  if(z>=57&&z<=71)return['+3',3];
+  if(z>=89&&z<=103)return['+3 / +4',3];
+  if(g===1)return['+1',1]; if(g===2)return['+2',2]; if(g===13)return['+3',3];
+  if(g===14)return z<=14?['সমযোজী',0]:['+2 / +4',2];
+  if(g===15)return z<=15?['−3',-3]:['+3',3];
+  if(g===16)return z===84?['+2 / +4',2]:['−2',-2];
+  return['−1',-1];
+}
+const CATC={'অধাতু':['#dcfce7','#16a34a'],'নিষ্ক্রিয় গ্যাস':['#f3e8ff','#9333ea'],'ক্ষার ধাতু':['#fee2e2','#dc2626'],'মৃৎক্ষার ধাতু':['#ffedd5','#ea580c'],
+'অপধাতু':['#cffafe','#0891b2'],'হ্যালোজেন':['#fef9c3','#ca8a04'],'সংক্রমণ পরবর্তী ধাতু':['#e2e8f0','#475569'],'অবস্থান্তর ধাতু':['#dbeafe','#2563eb'],
+'ল্যান্থানাইড':['#fce7f3','#db2777'],'অ্যাক্টিনাইড':['#ede9fe','#6d28d9']};
+const E=SYM.map((sym,i)=>{const z=i+1,g=grp(z);return{z,sym,bn:BNN[i],en:EN[i],shells:SH[i],period:period(z),group:g,cat:cat(z),mass:MASS[i],ci:ionOf(z,g)}});
+const pos=e=>FB(e.z)?[e.z<=71?e.z-54:e.z-86,e.z<=71?9:10]:[e.group,e.period];
+
+const CAP=[2,8,18,32,50,72,98], NAMES=['K','L','M','N','O','P','Q'], SC=['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#0891b2'];
+const bn=s=>String(s).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+const $=id=>document.getElementById(id);
+const canvas=$('atomCanvas'), ctx=canvas.getContext('2d');
+let Z=10, off=0, playing=true, angle=0;
+
+function resize(){
+  const r=canvas.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  canvas.width=r.width*d; canvas.height=r.height*d;
+  ctx.setTransform(d,0,0,d,0,0);
+}
+window.addEventListener('resize',resize); resize();
+
+function ionShells(base,o){
+  const s=[...base]; let n=o;
+  while(n<0&&s.length){const i=s.length-1; if(s[i]>-n){s[i]+=n;n=0}else{n+=s[i];s.pop()}}
+  while(n>0){
+    const i=s.length-1, cap=i<0?0:(i===0?2:8);
+    if(i>=0&&s[i]<cap){const a=Math.min(cap-s[i],n);s[i]+=a;n-=a}
+    else if(s.length<7){s.push(1);n--}
+    else break;
+  }
+  return s;
+}
+
+/* static UI: legend, periodic table */
+$('legend').innerHTML=SC.map((c,i)=>'<span class="flex items-center gap-1"><i class="inline-block w-2.5 h-2.5 rounded-full" style="background:'+c+'"></i>'+NAMES[i]+'</span>').join('');
+$('catLegend').innerHTML=Object.keys(CATC).map(k=>'<span class="flex items-center gap-1"><i class="inline-block w-2.5 h-2.5 rounded-sm border" style="background:'+CATC[k][0]+';border-color:'+CATC[k][1]+'"></i>'+k+'</span>').join('');
+const cells=E.map(el=>{
+  const b=document.createElement('button'), c=CATC[el.cat];
+  b.className='cell rounded-[4px] border text-[9px] font-bold leading-none py-1.5';
+  b.style.cssText='grid-column:'+pos(el)[0]+';grid-row:'+pos(el)[1]+';background:'+c[0]+';border-color:'+c[1]+'66;color:'+c[1];
+  b.innerHTML='<span class="block text-[7px] font-normal opacity-70">'+el.z+'</span>'+el.sym;
+  b.addEventListener('click',()=>{Z=el.z;off=0;$('zSlider').value=Z;updateUI()});
+  $('ptable').appendChild(b); return b;
+});
+
+function render(){
+  const r=canvas.getBoundingClientRect(), w=r.width, h=r.height, cx=w/2, cy=h/2;
+  ctx.clearRect(0,0,w,h);
+  const el=E[Z-1], sh=ionShells(el.shells,off), n=Math.max(sh.length,1);
+  const maxR=Math.min(w,h)*0.43, minR=n>4?34:44, step=n>1?(maxR-minR)/(n-1):0, small=step<22, er=step<10?3.2:step<16?4.2:step<22?5.2:6.5;
+  const ionCol=off>0?'#059669':off<0?'#e11d48':'#2563eb';
+
+  sh.forEach((cnt,i)=>{
+    const R=minR+i*step, col=SC[i]||'#64748b';
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle=col+'66'; ctx.lineWidth=1.4; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#fff'; ctx.fillRect(cx-1,cy-R-8,small?12:40,15);
+    ctx.fillStyle=col; ctx.font='bold 10px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(small?NAMES[i]:NAMES[i]+' · '+cnt,cx+2,cy-R);
+    const a0=angle*(1/Math.sqrt(i+1))*(i%2===0?1:-0.8);
+    for(let k=0;k<cnt;k++){
+      const a=2*Math.PI/cnt*k+a0, x=cx+R*Math.cos(a), y=cy+R*Math.sin(a);
+      ctx.beginPath(); ctx.arc(x,y,er,0,Math.PI*2);
+      ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=7; ctx.fill(); ctx.shadowBlur=0;
+      ctx.lineWidth=1.5; ctx.strokeStyle='#fff'; ctx.stroke();
+      if(er>6){ctx.fillStyle='#fff'; ctx.font='bold 8px sans-serif'; ctx.textAlign='center'; ctx.fillText('−',x,y+.5);}
+    }
+  });
+
+  const nr=n>4?20:25;
+  let g=ctx.createRadialGradient(cx,cy,5,cx,cy,nr+14);
+  g.addColorStop(0,'rgba(239,68,68,.35)'); g.addColorStop(1,'rgba(239,68,68,0)');
+  ctx.beginPath(); ctx.arc(cx,cy,nr+14,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  g=ctx.createRadialGradient(cx-7,cy-7,2,cx,cy,nr);
+  g.addColorStop(0,'#fca5a5'); g.addColorStop(.7,'#ef4444'); g.addColorStop(1,'#b91c1c');
+  ctx.beginPath(); ctx.arc(cx,cy,nr,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle=ionCol; ctx.stroke();
+
+  const charge=-off;
+  let t=el.sym; if(charge!==0) t+=(Math.abs(charge)>1?Math.abs(charge):'')+(charge>0?'+':'−');
+  ctx.fillStyle='#fff'; ctx.font='bold '+(n>4?12:14)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(t,cx,cy+1);
+}
+
+function updateUI(){
+  const el=E[Z-1], total=Math.max(0,Z+off), ch=Z-total, sh=ionShells(el.shells,off), neu=el.mass-Z, c=CATC[el.cat];
+  $('zVal').textContent=bn(Z);
+  $('tile').style.cssText='background:'+c[0]+';border-color:'+c[1];
+  $('tSym').style.color=c[1]; $('tSym').textContent=el.sym; $('tZ').textContent=bn(Z); $('tM').textContent=bn(el.mass); $('tBn').textContent=el.bn;
+  const sup=ch===0?'':'<sup>'+(Math.abs(ch)===1?'':bn(Math.abs(ch)))+(ch>0?'+':'−')+'</sup>';
+  $('title').innerHTML='<span class="text-blue-700">'+el.en+' ('+el.sym+sup+')</span><br><span class="text-emerald-700 text-sm">'+el.bn+'</span>';
+  $('period').textContent=bn(el.period); $('group').textContent=el.group?bn(el.group):'f-ব্লক';
+  const ce=$('cat'); ce.textContent=el.cat; ce.style.cssText='background:'+c[0]+';color:'+c[1]+';border-color:'+c[1]+'88';
+  $('pCount').textContent=bn(Z); $('eCount').textContent=bn(total);
+
+  const outer=sh.length?sh[sh.length-1]:0;
+  const stat=(l,v,col)=>'<div class="rounded-xl border border-slate-200 bg-white py-1.5"><div class="text-[10px] text-slate-500">'+l+'</div><div class="font-bold text-sm" style="color:'+col+'">'+v+'</div></div>';
+  $('stats').innerHTML=stat('প্রোটন (p⁺)',bn(Z),'#dc2626')+stat('নিউট্রন (n⁰)',bn(neu),'#64748b')+stat('ইলেকট্রন (e⁻)',bn(total),'#2563eb')
+    +stat('ভর সংখ্যা',bn(el.mass),'#7c3aed')+stat('বহিঃস্থ e⁻',bn(outer),'#059669')+stat('সাধারণ আয়ন',el.ci[0].replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]),'#ea580c');
+
+  $('bars').innerHTML=sh.length?sh.map((cnt,i)=>'<div class="flex items-center gap-2 text-[11px]"><span class="w-5 font-bold" style="color:'+SC[i]+'">'+NAMES[i]+'</span><div class="flex-1 h-3 rounded-full bg-slate-200 overflow-hidden"><div class="bar h-full rounded-full" style="width:'+(cnt/CAP[i]*100)+'%;background:'+SC[i]+'"></div></div><span class="w-12 text-right text-slate-600">'+bn(cnt)+' / '+bn(CAP[i])+'</span></div>').join(''):'<div class="text-xs text-slate-500">কোনো ইলেকট্রন নেই</div>';
+  $('shellText').textContent=sh.length?'বিন্যাস: '+sh.map(bn).join(', '):'বিন্যাস: খালি';
+
+  const full=sh.length&&(sh.length===1?outer===2:(outer===8||outer===CAP[sh.length-1]));
+  const st=$('stable');
+  if(full){
+    st.className='rounded-xl border p-3 text-xs leading-relaxed bg-emerald-50 border-emerald-300 text-emerald-800';
+    st.innerHTML='✅ <b>স্থিতিশীল বিন্যাস।</b> বহিঃস্থ কক্ষপথ পূর্ণ'+(ch===0?' — নিষ্ক্রিয় গ্যাসের মতো, সহজে বিক্রিয়া করে না।':' — এই আয়নের ইলেকট্রন বিন্যাস নিকটতম নিষ্ক্রিয় গ্যাসের মতো।');
+  }else{
+    let hint='';
+    if(el.z>=104) hint='অতি-ভারী কৃত্রিম মৌল; এর ধর্ম মূলত তাত্ত্বিক পূর্বাভাস।';
+    else if(['অবস্থান্তর ধাতু','ল্যান্থানাইড','অ্যাক্টিনাইড'].includes(el.cat)) hint='এই ধাতু সাধারণত <b>'+bn(el.ci[0])+'</b> আয়ন গঠন করে।';
+    else if(outer<=3&&sh.length>0) hint='বহিঃস্থ '+bn(outer)+'টি ইলেকট্রন ত্যাগ করে ক্যাটায়ন হওয়ার প্রবণতা।';
+    else if(outer>=5) hint=bn(8-outer)+'টি ইলেকট্রন গ্রহণ করে অ্যানায়ন হওয়ার প্রবণতা।';
+    else hint='ইলেকট্রন ভাগাভাগি করে সমযোজী বন্ধন গঠনের প্রবণতা।';
+    st.className='rounded-xl border p-3 text-xs leading-relaxed bg-amber-50 border-amber-300 text-amber-900';
+    st.innerHTML='⚠️ <b>বহিঃস্থ কক্ষপথ অপূর্ণ।</b> '+hint;
+  }
+
+  const b=$('chargeBadge'), nm=$('ionName'), base='font-bold px-2 py-0.5 rounded border ';
+  if(ch===0){b.className=base+'bg-slate-50 text-slate-700 border-slate-300'; b.textContent='নিরপেক্ষ (০)'; nm.textContent='নিরপেক্ষ পরমাণু';}
+  else if(ch>0){b.className=base+'bg-rose-50 text-rose-700 border-rose-300'; b.textContent='ক্যাটায়ন (+'+bn(ch)+')'; nm.textContent='ধনাত্মক আয়ন ('+el.sym+(ch===1?'':ch)+'+)';}
+  else{b.className=base+'bg-emerald-50 text-emerald-700 border-emerald-300'; b.textContent='অ্যানায়ন (−'+bn(-ch)+')'; nm.textContent='ঋণাত্মক আয়ন ('+el.sym+(ch===-1?'':-ch)+'−)';}
+
+  cells.forEach((x,i)=>{x.style.outline=i===Z-1?'2px solid #1d4ed8':'none';x.style.outlineOffset='1px';x.style.transform=i===Z-1?'scale(1.12)':'';x.style.zIndex=i===Z-1?2:0});
+  const ci=$('commonIon'); ci.disabled=el.ci[1]===0; ci.style.opacity=ci.disabled?.4:1;
+  render();
+}
+
+$('zSlider').addEventListener('input',e=>{Z=+e.target.value;off=0;updateUI()});
+$('addE').addEventListener('click',()=>{if(off<8){off++;updateUI()}});
+$('removeE').addEventListener('click',()=>{if(Z+off>0){off--;updateUI()}});
+$('resetIon').addEventListener('click',()=>{off=0;updateUI()});
+$('commonIon').addEventListener('click',()=>{off=-E[Z-1].ci[1];updateUI()});
+$('playBtn').addEventListener('click',()=>{playing=!playing;$('playBtn').textContent=playing?'❚❚ থামান':'▶ চালান'});
+$('resetBtn').addEventListener('click',()=>{angle=0;render()});
+$('infoBtn').addEventListener('click',()=>$('infoPanel').classList.toggle('hidden'));
+$('closeInfo').addEventListener('click',()=>$('infoPanel').classList.add('hidden'));
+
+(function loop(){ if(playing) angle+=0.015; render(); requestAnimationFrame(loop); })();
+updateUI();
+</script>
+</body>
+</html>
