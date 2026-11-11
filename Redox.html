@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>বন্ধন ও Redox সিমুলেটর (Z = 1–60)</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f4f8; --panel:#ffffff; --line:#cbd5e1; --fg:#0f172a; --mut:#64748b; --cv:#f8fafc; --ring:#94a3b8;
+  --c1:#2563eb; --c2:#059669; --e:#e11d48; --gold:#d97706; --purple:#7c3aed; --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0b1219; --panel:#131d2a; --line:#253448; --fg:#e8eef5; --mut:#8da2b8; --cv:#060b14; --ring:#34506b;
+    --c1:#60a5fa; --c2:#34d399; --e:#f43f5e; --gold:#fbbf24; --purple:#a78bfa;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0b1219; --panel:#131d2a; --line:#253448; --fg:#e8eef5; --mut:#8da2b8; --cv:#060b14; --ring:#34506b;
+  --c1:#60a5fa; --c2:#34d399; --e:#f43f5e; --gold:#fbbf24; --purple:#a78bfa;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+}
+html { scroll-padding-top:env(safe-area-inset-top,0px); }
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background:var(--bg); color:var(--fg);
+  font-family:'Hind Siliguri','Noto Sans Bengali','Segoe UI',sans-serif;
+  padding:12px; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:100vh;
+}
+.w { width:100%; max-width:1060px; }
+h1 {
+  font-size:1.25rem; font-weight:700; text-align:center; letter-spacing:-.01em;
+  background:linear-gradient(135deg,var(--c1),var(--c2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.subtitle { text-align:center; font-size:.82rem; color:var(--mut); margin-top:-4px; }
+.chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+.chips::-webkit-scrollbar { height:5px; }
+.chips::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
+button, select {
+  font:inherit; color:var(--fg); background:var(--panel); border:1px solid var(--line);
+  border-radius:7px; padding:6px 11px; cursor:pointer; font-size:.85rem;
+  transition:border-color .15s,background .15s,transform .1s; box-shadow:var(--shadow);
+}
+button:hover { border-color:var(--c1); }
+button:active { transform:scale(.97); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--c1); outline-offset:2px; }
+.pri { background:linear-gradient(135deg,var(--c1),#3b82f6); color:#fff; border-color:transparent; font-weight:600; }
+.pri:hover { background:linear-gradient(135deg,#1d4ed8,var(--c1)); }
+.chips button { white-space:nowrap; font-size:.8rem; padding:5px 10px; }
+.chips button:hover { background:var(--c1); color:#fff; border-color:var(--c1); }
+.cards { display:flex; gap:10px; flex-wrap:wrap; }
+.card {
+  flex:1; min-width:280px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); padding:12px; font-size:.88rem; line-height:1.55; box-shadow:var(--shadow);
+}
+.card h2 { font-size:.95rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:600; }
+.card select { width:100%; margin-bottom:7px; font-size:.85rem; }
+.card select:disabled { opacity:.55; cursor:default; }
+.role { font-size:.7rem; padding:2px 8px; border-radius:5px; background:var(--line); color:var(--fg); font-weight:500; }
+.k { color:var(--mut); }
+.hl { font-weight:600; }
+.cv {
+  height:400px; background:var(--cv); border:1px solid var(--line); border-radius:12px;
+  overflow:hidden; box-shadow:var(--shadow); position:relative;
+}
+canvas { width:100%; height:100%; display:block; }
+.ctl { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center; font-size:.85rem; padding:4px 0; }
+.ctl input[type=range] { width:90px; accent-color:var(--c1); }
+.info {
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; font-size:.92rem; line-height:1.6; box-shadow:var(--shadow);
+}
+.top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+.badge { padding:4px 12px; border-radius:6px; font-weight:600; color:#fff; font-size:.82rem; letter-spacing:.01em; }
+.form { font-size:1.55rem; font-weight:700; letter-spacing:.02em; }
+.meter { height:7px; background:var(--line); border-radius:4px; flex:1; min-width:120px; overflow:hidden; position:relative; }
+.meter i {
+  display:block; height:100%; background:linear-gradient(90deg,var(--c2),var(--gold),var(--e));
+  width:0; transition:width .4s cubic-bezier(.4,0,.2,1); border-radius:4px;
+}
+.info ul { padding-left:20px; color:var(--mut); font-size:.85rem; margin-top:6px; }
+.info ul li { margin-bottom:2px; }
+.legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.76rem; color:var(--mut); justify-content:center; margin-top:2px; }
+.legend span { display:flex; align-items:center; gap:4px; }
+.legend i { width:10px; height:10px; border-radius:50%; display:inline-block; }
+@media (max-width:600px) {
+  h1 { font-size:1.05rem; }
+  .card { min-width:100%; }
+  .cv { height:320px; }
+  .form { font-size:1.3rem; }
+  .ctl { gap:6px; }
+  button, select { padding:5px 9px; font-size:.8rem; }
+}
+</style>
+</head>
+<body>
+<h1>রাসায়নিক বন্ধন ও জারণ-বিজারণ সিমুলেটর</h1>
+<div class="subtitle">মৌল Z = 1–60 · আয়নিক · সমযোজী · ধাতব · Redox</div>
+
+<div class="w chips" id="chips"></div>
+
+<div class="w cards">
+  <div class="card">
+    <h2><span>১ম মৌল <span id="n1" class="k"></span></span><span class="role" id="r1"></span></h2>
+    <select id="s1" aria-label="১ম মৌল"></select>
+    <select id="v1" aria-label="১ম মৌলের যোজ্যতা"></select>
+    <div><span class="k">Z:</span> <span id="z1"></span> · <span class="k">EN:</span> <span id="en1"></span> · <span id="t1"></span></div>
+    <div><span class="k">ইলেকট্রন বিন্যাস:</span> <span id="sh1" class="hl"></span></div>
+    <div><span class="k">চার্জ / বহিঃস্তর e⁻:</span> <span id="c1v" class="hl"></span></div>
+  </div>
+  <div class="card">
+    <h2><span>২য় মৌল <span id="n2" class="k"></span></span><span class="role" id="r2"></span></h2>
+    <select id="s2" aria-label="২য় মৌল"></select>
+    <select id="v2" aria-label="২য় মৌলের যোজ্যতা"></select>
+    <div><span class="k">Z:</span> <span id="z2"></span> · <span class="k">EN:</span> <span id="en2"></span> · <span id="t2"></span></div>
+    <div><span class="k">ইলেকট্রন বিন্যাস:</span> <span id="sh2" class="hl"></span></div>
+    <div><span class="k">চার্জ / বহিঃস্তর e⁻:</span> <span id="c2v" class="hl"></span></div>
+  </div>
+</div>
+
+<div class="w cv"><canvas id="cv"></canvas></div>
+
+<div class="w ctl">
+  <button class="pri" id="go">▶ ধাপ</button>
+  <button id="auto">▶ অটো</button>
+  <button id="rst">↺ রিসেট</button>
+  <button id="swap">⇄ অদল-বদল</button>
+  <button id="rnd">🎲 র‍্যান্ডম</button>
+  <button id="vb" hidden>⚡ ভোল্টেজ</button>
+  <label>গতি <input type="range" id="sp" min="0.5" max="3" step="0.25" value="1"></label>
+</div>
+
+<div class="w legend">
+  <span><i style="background:var(--c1)"></i> ১ম মৌল</span>
+  <span><i style="background:var(--c2)"></i> ২য় মৌল</span>
+  <span><i style="background:var(--e)"></i> ইলেকট্রন</span>
+  <span><i style="background:var(--gold)"></i> শেয়ার্ড/স্থানান্তরিত</span>
+  <span><i style="background:var(--purple)"></i> ধাতব আয়ন</span>
+</div>
+
+<div class="w info">
+  <div class="top">
+    <span class="badge" id="bd">—</span>
+    <span class="form" id="fm"></span>
+    <span class="k">ΔEN <b id="den" style="color:var(--fg)"></b></span>
+    <div class="meter" title="ইলেকট্রোনেগেটিভিটি পার্থক্য"><i id="mt"></i></div>
+  </div>
+  <div id="st"></div>
+  <ul id="pr"></ul>
+</div>
+
+<script>
+/* ===== ELEMENT DATA (Z=1–60) ===== */
+const D=[
+[1,'H','Hydrogen',2.2,[1],'n',1],[2,'He','Helium',0,[2],'g',0],[3,'Li','Lithium',.98,[2,1],'m',1],
+[4,'Be','Beryllium',1.57,[2,2],'m',2],[5,'B','Boron',2.04,[2,3],'n',3],[6,'C','Carbon',2.55,[2,4],'n',4],
+[7,'N','Nitrogen',3.04,[2,5],'n',3],[8,'O','Oxygen',3.44,[2,6],'n',2],[9,'F','Fluorine',3.98,[2,7],'n',1],
+[10,'Ne','Neon',0,[2,8],'g',0],[11,'Na','Sodium',.93,[2,8,1],'m',1],[12,'Mg','Magnesium',1.31,[2,8,2],'m',2],
+[13,'Al','Aluminium',1.61,[2,8,3],'m',3],[14,'Si','Silicon',1.9,[2,8,4],'n',4],[15,'P','Phosphorus',2.19,[2,8,5],'n',3],
+[16,'S','Sulfur',2.58,[2,8,6],'n',2],[17,'Cl','Chlorine',3.16,[2,8,7],'n',1],[18,'Ar','Argon',0,[2,8,8],'g',0],
+[19,'K','Potassium',.82,[2,8,8,1],'m',1],[20,'Ca','Calcium',1,[2,8,8,2],'m',2],[21,'Sc','Scandium',1.36,[2,8,9,2],'m',3],
+[22,'Ti','Titanium',1.54,[2,8,10,2],'m',4],[23,'V','Vanadium',1.63,[2,8,11,2],'m',3],[24,'Cr','Chromium',1.66,[2,8,13,1],'m',3],
+[25,'Mn','Manganese',1.55,[2,8,13,2],'m',2],[26,'Fe','Iron',1.83,[2,8,14,2],'m',3],[27,'Co','Cobalt',1.88,[2,8,15,2],'m',2],
+[28,'Ni','Nickel',1.91,[2,8,16,2],'m',2],[29,'Cu','Copper',1.9,[2,8,18,1],'m',2],[30,'Zn','Zinc',1.65,[2,8,18,2],'m',2],
+[31,'Ga','Gallium',1.81,[2,8,18,3],'m',3],[32,'Ge','Germanium',2.01,[2,8,18,4],'n',4],[33,'As','Arsenic',2.18,[2,8,18,5],'n',3],
+[34,'Se','Selenium',2.55,[2,8,18,6],'n',2],[35,'Br','Bromine',2.96,[2,8,18,7],'n',1],[36,'Kr','Krypton',0,[2,8,18,8],'g',0],
+[37,'Rb','Rubidium',.82,[2,8,18,8,1],'m',1],[38,'Sr','Strontium',.95,[2,8,18,8,2],'m',2],[39,'Y','Yttrium',1.22,[2,8,18,9,2],'m',3],
+[40,'Zr','Zirconium',1.33,[2,8,18,10,2],'m',4],[41,'Nb','Niobium',1.6,[2,8,18,12,1],'m',5],[42,'Mo','Molybdenum',2.16,[2,8,18,13,1],'m',6],
+[43,'Tc','Technetium',1.9,[2,8,18,13,2],'m',4],[44,'Ru','Ruthenium',2.2,[2,8,18,15,1],'m',3],[45,'Rh','Rhodium',2.28,[2,8,18,16,1],'m',3],
+[46,'Pd','Palladium',2.2,[2,8,18,18],'m',2],[47,'Ag','Silver',1.93,[2,8,18,18,1],'m',1],[48,'Cd','Cadmium',1.69,[2,8,18,18,2],'m',2],
+[49,'In','Indium',1.78,[2,8,18,18,3],'m',3],[50,'Sn','Tin',1.96,[2,8,18,18,4],'m',4],[51,'Sb','Antimony',2.05,[2,8,18,18,5],'n',3],
+[52,'Te','Tellurium',2.1,[2,8,18,18,6],'n',2],[53,'I','Iodine',2.66,[2,8,18,18,7],'n',1],[54,'Xe','Xenon',0,[2,8,18,18,8],'g',0],
+[55,'Cs','Caesium',.79,[2,8,18,18,8,1],'m',1],[56,'Ba','Barium',.89,[2,8,18,18,8,2],'m',2],[57,'La','Lanthanum',1.1,[2,8,18,18,9,2],'m',3],
+[58,'Ce','Cerium',1.12,[2,8,18,19,9,2],'m',3],[59,'Pr','Praseodymium',1.13,[2,8,18,21,8,2],'m',3],[60,'Nd','Neodymium',1.14,[2,8,18,22,8,2],'m',3]
+];
+
+const E = D.map(r => ({z:r[0], s:r[1], n:r[2], en:r[3], sh:r[4], t:r[5], c:r[6]}));
+
+const VS = {
+  6:[4,2], 15:[3,5], 16:[2,4,6], 22:[4,3,2], 23:[3,2,4,5], 24:[3,2,6],
+  25:[2,4,7,3], 26:[3,2], 27:[2,3], 28:[2,3], 29:[2,1], 32:[4,2], 33:[3,5],
+  34:[2,4,6], 41:[5,3], 42:[6,4,3], 43:[4,7], 44:[3,4], 46:[2,4], 50:[4,2],
+  51:[3,5], 52:[2,4,6], 58:[3,4], 59:[3,4]
+};
+E.forEach(e => { e.vs = VS[e.z] || [e.c]; });
+
+const ROM = ['','I','II','III','IV','V','VI','VII'];
+
+const PRE = [
+  ['NaCl', 11, 17], ['MgO', 12, 8], ['Al₂O₃', 13, 8], ['CaCl₂', 20, 17],
+  ['FeO', 26, 8, 2], ['Fe₂O₃', 26, 8, 3], ['CuO', 29, 8, 2], ['Cu₂O', 29, 8, 1],
+  ['FeCl₂', 26, 17, 2], ['FeCl₃', 26, 17, 3], ['KBr', 19, 35], ['CsCl', 55, 17],
+  ['SrBr₂', 38, 35], ['H₂O', 1, 8], ['CO₂', 6, 8], ['SO₂', 16, 8, 4],
+  ['SO₃', 16, 8, 6], ['NH₃', 7, 1], ['CH₄', 6, 1], ['PCl₃', 15, 17, 3],
+  ['PCl₅', 15, 17, 5], ['N₂', 7, 7], ['O₂', 8, 8], ['HCl', 1, 17],
+  ['HBr', 1, 35], ['I₂', 53, 53], ['Na (ধাতু)', 11, 11], ['Fe–Ni', 26, 28],
+  ['He (নিষ্ক্রিয়)', 2, 17]
+];
+
+/* ===== HELPERS ===== */
+const $ = i => document.getElementById(i);
+const gcd = (a,b) => b ? gcd(b, a%b) : a;
+const el = z => E[z-1];
+const SB = '₀₁₂₃₄₅₆₇₈₉';
+const SP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sub = n => n > 1 ? String(n).replace(/\d/g, d => SB[d]) : '';
+const sup = n => String(n).replace(/\d/g, d => SP[d]);
+const BC = ['','–','=','≡','≣'];
+
+let z1=11, z2=17, v1=1, v2=1;
+let S, fly=[], pairs=[], sea=[], autoOn=false, volt=false, spd=1;
+let ang=0, last=0, cw=0, ch=0, T={}, fr=0;
+
+let approach = 0;
+let approachTarget = 0;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv = $('cv'), ctx = cv.getContext('2d');
+
+const cur = sl => ({...el(sl===1 ? z1 : z2), c: sl===1 ? v1 : v2});
+
+function shellsOf(a) {
+  const s = [...a.e.sh];
+  let r = a.lost;
+  for (let i = s.length-1; i >= 0 && r > 0; i--) {
+    const m = Math.min(s[i], r);
+    s[i] -= m;
+    r -= m;
+  }
+  if (a.gained) s[s.length-1] += a.gained;
+  return s;
+}
+
+function readTheme() {
+  const c = getComputedStyle(document.documentElement);
+  const g = n => c.getPropertyValue(n).trim();
+  T = {
+    ring: g('--ring'), c1: g('--c1'), c2: g('--c2'), e: g('--e'),
+    gold: g('--gold'), fg: g('--fg'), purple: g('--purple')
+  };
+}
+
+/* ===== SETUP ===== */
+function setup() {
+  fly = []; pairs = []; sea = []; autoOn = false;
+  $('auto').textContent = '▶ অটো';
+  approach = 0;
+  approachTarget = 0;
+
+  const P = cur(1), Q = cur(2);
+  const mk = (e, slot) => ({e, slot, lost:0, gained:0, sh:0});
+
+  S = {
+    k:0, total:0, atoms:[], edge:{}, bonds:{}, ord:{}, steps:[],
+    pos:[], sc:1, type:'', lay:'', baseTargets:[], a:1, b:1
+  };
+
+  if (P.t === 'g' || Q.t === 'g') {
+    S.type = 'none'; S.a = S.b = 1;
+    S.atoms = [mk(P,1), mk(Q,2)];
+  } else if (P.t === 'm' && Q.t === 'm') {
+    S.type = 'metal';
+    S.total = Math.max(P.c, Q.c);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
+      const f = (r+c) % 2 && P.z !== Q.z;
+      S.atoms.push(mk(f ? Q : P, f ? 2 : 1));
+    }
+  } else if (P.t !== Q.t) {
+    S.type = 'ion';
+    const Dn = P.t === 'm' ? P : Q, An = P.t === 'm' ? Q : P;
+    const ds = P.t === 'm' ? 1 : 2;
+    const Ac = {...An, c: el(An.z).vs[0]};
+    const g = gcd(Dn.c, Ac.c);
+    S.a = Ac.c / g; S.b = Dn.c / g;
+    S.D = Dn; S.Ac = Ac;
+    for (let i = 0; i < S.a; i++) S.atoms.push(mk(Dn, ds));
+    for (let i = 0; i < S.b; i++) S.atoms.push(mk(Ac, 3-ds));
+    const fill = Array(S.b).fill(0);
+    let j = 0;
+    for (let i = 0; i < S.a; i++) for (let k = 0; k < Dn.c; k++) {
+      while (fill[j] >= Ac.c) j++;
+      fill[j]++; S.steps.push([i, S.a+j]);
+    }
+    S.total = S.steps.length;
+  } else {
+    S.type = 'cov';
+    const A = P.en <= Q.en ? P : Q, B = A === P ? Q : P;
+    const sA = A === P ? 1 : 2;
+    S.A = A; S.B = B;
+    if (A.z === B.z) {
+      S.a = S.b = 1; S.lay = 'dia';
+      S.atoms = [mk(A,1), mk(B,2)];
+      for (let i = 0; i < A.c; i++) S.steps.push([0,1]);
+    } else {
+      const g = gcd(A.c, B.c);
+      S.a = B.c / g; S.b = A.c / g;
+      for (let i = 0; i < S.a; i++) S.atoms.push(mk(A, sA));
+      for (let i = 0; i < S.b; i++) S.atoms.push(mk(B, 3-sA));
+      for (let p = 0; p < S.a * A.c; p++)
+        S.steps.push([Math.floor(p/A.c), S.a + p % S.b]);
+      S.lay = S.a === 1 && S.b === 1 ? 'dia' : (S.a === 1 || S.b === 1) ? 'star' : 'bip';
+    }
+    S.steps.forEach(([i,j]) => {
+      const k = i+'-'+j;
+      S.ord[k] = (S.ord[k] || 0) + 1;
+    });
+    S.total = S.steps.length;
+  }
+
+  $('vb').hidden = S.type !== 'metal';
+  updateUI();
+}
+
+function beginApproach() {
+  approachTarget = 1;
+}
+
+function stepOnce() {
+  if (!S.total || S.k >= S.total) return;
+  beginApproach();
+
+  if (S.type === 'ion') {
+    const [d,a] = S.steps[S.k];
+    S.atoms[d].lost++;
+    fly.push({d, a, t:0});
+  } else if (S.type === 'cov') {
+    const [i,j] = S.steps[S.k], key = i+'-'+j;
+    const q = S.bonds[key] || 0;
+    S.bonds[key] = q + 1;
+    S.atoms[i].sh++;
+    S.atoms[j].sh++;
+    pairs.push({i, j, q, t: RM ? 1 : 0});
+  } else {
+    S.atoms.forEach((a,x) => {
+      if (a.lost < a.e.c) {
+        a.lost++;
+        const p = S.pos[x] || {x:cw/2, y:ch/2};
+        sea.push({
+          x:p.x, y:p.y,
+          vx:Math.random()*2-1, vy:Math.random()*2-1
+        });
+      }
+    });
+  }
+  S.k++;
+  updateUI();
+}
+
+/* ===== UI ===== */
+function updateUI() {
+  const P = cur(1), Q = cur(2);
+  const done = S.total > 0 && S.k >= S.total && !fly.length;
+
+  [1,2].forEach(sl => {
+    const e = sl === 1 ? P : Q;
+    const r = S.atoms.find(a => a.slot === sl) || {e, lost:0, gained:0, sh:0};
+    const n = S.atoms.filter(a => a.slot === sl).length || 1;
+    const sh = shellsOf(r).filter(x => x > 0);
+
+    $('z'+sl).textContent = `${e.z} (${e.s})`;
+    $('en'+sl).textContent = e.en || '—';
+    $('t'+sl).textContent = {m:'ধাতু', n:'অধাতু', g:'নিষ্ক্রিয় গ্যাস'}[e.t];
+    $('sh'+sl).textContent = sh.join(', ');
+
+    const net = r.lost - r.gained;
+    $('c'+sl+'v').textContent = S.type === 'cov'
+      ? `${e.sh[e.sh.length-1]}+${r.sh} = ${e.sh[e.sh.length-1]+r.sh}`
+      : (net > 0 ? '+'+net : net < 0 ? net : '0');
+
+    $('n'+sl).textContent = n > 1 ? `× ${n}` : '';
+
+    const rl = S.type === 'ion'
+      ? (e.t === 'm' ? 'বিজারক (e⁻ দাতা)' : 'জারক (e⁻ গ্রহীতা)')
+      : S.type === 'cov' ? 'e⁻ শেয়ার'
+      : S.type === 'metal' ? 'ধাতব আয়ন'
+      : 'নিষ্ক্রিয়';
+    $('r'+sl).textContent = rl;
+  });
+
+  const col = {
+    ion:'#d97706', cov:'#0284c7', metal:'#7c3aed', none:'#64748b'
+  }[S.type];
+
+  const den = (P.en && Q.en) ? Math.abs(P.en - Q.en) : null;
+  $('den').textContent = den === null ? '—' : den.toFixed(2);
+  $('mt').style.width = den === null ? 0 : Math.min(100, den/3.2*100) + '%';
+
+  let name, fm = '', st = '', pr = [];
+
+  if (S.type === 'none') {
+    name = 'কোনো বন্ধন নয়';
+    st = 'নিষ্ক্রিয় গ্যাসের বহিঃস্তর পূর্ণ (অষ্টক/দুইয়ের নিয়ম), তাই এটি স্বাভাবিক অবস্থায় বন্ধন গঠন করে না।';
+  } else if (S.type === 'ion') {
+    const {D:Dn, Ac, a, b} = S;
+    name = `আয়নিক বন্ধন · ${Dn.n}(${ROM[Dn.c]})`;
+    fm = Dn.s + sub(a) + Ac.s + sub(b);
+    st = done
+      ? `<b style="color:var(--e)">জারণ:</b> ${Dn.s} → ${Dn.s}<sup>${Dn.c}+</sup> + ${Dn.c}e⁻ (× ${a})<br>
+         <b style="color:var(--c2)">বিজারণ:</b> ${Ac.s} + ${Ac.c}e⁻ → ${Ac.s}<sup>${Ac.c}-</sup> (× ${b})<br>
+         মোট স্থানান্তরিত e⁻ = ${S.total}। বিপরীত আয়নের স্থির-তড়িৎ আকর্ষণই আয়নিক বন্ধন।`
+      : `ধাপ ${S.k}/${S.total}: ${Dn.s} ধাতু e⁻ ছেড়ে ক্যাটায়ন, ${Ac.s} অধাতু e⁻ নিয়ে অ্যানায়ন হয়। "▶ ধাপ" চাপুন।`;
+    st += `<br><span class="k">নিয়ম: ১টি e⁻ দান = ১টি বন্ধন-রেখা; ২টি e⁻ দান = ২টি রেখা; ৩টি e⁻ দান = ৩টি রেখা। (বন্ধনে এখন মোট ${Object.values(S.edge).reduce((x,y)=>x+y,0)}টি রেখা)</span>`;
+    if (Dn.c !== el(Dn.z).vs[0] || el(Dn.z).vs.length > 1)
+      st += `<br><span class="k">${Dn.n}-এর একাধিক জারণ অবস্থা আছে; যোজ্যতা বদলালে সংকেতও বদলায় (যেমন Fe: FeO ↔ Fe₂O₃, Cu: CuO ↔ Cu₂O)।</span>`;
+    pr = ['গলনাঙ্ক ও স্ফুটনাঙ্ক উচ্চ', 'কঠিন অবস্থায় অপরিবাহী; গলিত বা দ্রবণে পরিবাহী', 'কেলাসাকার ও ভঙ্গুর কঠিন'];
+  } else if (S.type === 'cov') {
+    const {A, B, a, b} = S;
+    const pol = den < .4 ? 'অপোলার' : den < 1.7 ? 'পোলার' : 'অত্যন্ত পোলার';
+    const maxo = Math.max(...Object.values(S.ord));
+    const bn = ['','একক','দ্বি','ত্রি','চতুর্'][maxo] + 'বন্ধন';
+    let sf;
+    if (S.lay === 'dia') sf = A.s + BC[maxo] + B.s;
+    else if (S.lay === 'star') {
+      const c = a === 1 ? A : B, o = a === 1 ? B : A, k = a === 1 ? b : a;
+      sf = k === 2
+        ? o.s + BC[maxo] + c.s + BC[maxo] + o.s
+        : `${c.s}(${BC[maxo]}${o.s})${sub(k)}`;
+    } else sf = 'জালক/বহু-পরমাণু';
+
+    name = `সমযোজী বন্ধন (${pol})`;
+    let f1 = A, f2 = B, x = a, y = b;
+    if (A.s === 'H' && B.c >= 3) { f1 = B; f2 = A; x = b; y = a; }
+    fm = A.z === B.z ? A.s + '₂' : f1.s + sub(x) + f2.s + sub(y);
+    st = `গঠন: <b>${sf}</b> · ${bn} · শেয়ার্ড e⁻ জোড়া ${S.k}/${S.total}<br>
+          <span class="k">নিয়ম: প্রতিটি পরমাণু ১টি করে e⁻ দিলে = ১টি বন্ধন; ২টি করে দিলে = ২টি বন্ধন; ৩টি করে = ত্রিবন্ধন।</span>`;
+    if (done) st += '<br>শেয়ার্ড e⁻ দুই পরমাণুর বহিঃস্তরেই (কক্ষপথে) থাকে। দুই স্তরের মিলিত অংশে ঘুরে ঘুরে সে দুই পরমাণুরই অষ্টক (H-এর ক্ষেত্রে দ্বিক) পূর্ণ করছে।';
+    pr = [
+      'অণুগুলো নিরপেক্ষ; গলনাঙ্ক সাধারণত নিম্ন',
+      'সাধারণত তড়িৎ অপরিবাহী',
+      den >= .4
+        ? `ΔEN=${den.toFixed(2)}: ইলেকট্রন জোড়া বেশি EN-এর দিকে সরে, আংশিক δ⁺/δ⁻`
+        : 'ইলেকট্রন জোড়া প্রায় সমানভাবে ভাগ হয়'
+    ];
+  } else {
+    name = P.z === Q.z ? 'ধাতব বন্ধন (বিশুদ্ধ ধাতু)' : 'ধাতব বন্ধন (সংকর ধাতু)';
+    fm = P.z === Q.z ? P.s : P.s + '–' + Q.s;
+    st = `মুক্ত ইলেকট্রন: <b>${sea.length}</b> · ধাপ ${S.k}/${S.total}`;
+    if (done)
+      st += `<br>ধনাত্মক ধাতব আয়নগুলো ইলেকট্রনের "সমুদ্রে" আবদ্ধ। ${volt ? 'ভোল্টেজে ইলেকট্রন একদিকে বইছে — এটাই তড়িৎ প্রবাহ।' : '⚡ ভোল্টেজ চাপলে প্রবাহ দেখুন।'}`;
+    pr = ['উজ্জ্বল ধাতব দীপ্তি', 'তাপ ও তড়িৎ উভয়ের সুপরিবাহী', 'ঘাতসহ ও তন্যতা (আয়নের স্তর সরে গেলেও বন্ধন টিকে থাকে)'];
+  }
+
+  const b = $('bd');
+  b.textContent = name;
+  b.style.background = col;
+  $('fm').textContent = fm;
+  $('st').innerHTML = st;
+  $('pr').innerHTML = pr.map(x => '<li>'+x+'</li>').join('');
+}
+
+/* ===== LAYOUT (rewritten: radius-aware, no overlaps, always fits canvas) ===== */
+const Rm = a => 26 + (a.e.sh.length-1) * 15;   // unscaled outer-shell radius
+
+function lay() {
+  const W = cw, H = ch, at = S.atoms, cx = W/2, cy = H/2;
+  let tg = [], st = [], sc = 1;
+
+  if (S.type === 'metal') {
+    /* grid of metal ions */
+    const c = Math.min((W-24)/5, (H-24)/3);
+    S.cell = c;
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 5; k++)
+      tg.push({x: cx+(k-2)*c, y: cy+(r-1)*c});
+    st = tg;
+
+  } else if (S.type === 'ion' || S.type === 'none') {
+    /* two columns; scale chosen so atoms in a column never touch each other */
+    const cnt = [S.a, S.b], colR = [0, 0];
+    at.forEach((a,i) => { const c = i < S.a ? 0 : 1; colR[c] = Math.max(colR[c], Rm(a)); });
+    for (let c = 0; c < 2; c++) {
+      const vert = cnt[c] === 1 ? (H/2 - 6) : (H/(cnt[c]+1)) / 2;
+      sc = Math.min(sc, (W*0.25 - 6) / colR[c], vert / colR[c]);
+    }
+    sc = Math.max(0.2, sc);
+    at.forEach((a,i) => {
+      const c = i < S.a ? 0 : 1, k = c ? i - S.a : i;
+      tg.push({x: W*(c ? 0.75 : 0.25), y: H*(k+1)/(cnt[c]+1)});
+    });
+    st = tg;
+
+  } else {
+    /* covalent: shells overlap, but no shell ring crosses another nucleus */
+    const R = at.map(Rm), Rx = Math.max(...R), Rn = Math.min(...R);
+    const d = Rx + Math.min(24, Rn - 4);
+    let q = [];
+
+    if (S.lay === 'dia') {
+      q = [{x:-d/2, y:0}, {x:d/2, y:0}];
+    } else if (S.lay === 'bip') {
+      const vs = Rx * 1.6;
+      at.forEach((a,i) => {
+        const c = i < S.a ? 0 : 1, n = c ? S.b : S.a, k = c ? i - S.a : i;
+        q.push({x: c ? d/2 : -d/2, y: (k - (n-1)/2) * vs});
+      });
+    } else {
+      const ci = S.a === 1 ? 0 : S.a;
+      const out = at.map((_,i) => i).filter(i => i !== ci);
+      const k = out.length, a0 = k === 2 ? 0 : -Math.PI/2;
+      q[ci] = {x:0, y:0};
+      out.forEach((i,n) => {
+        const g = a0 + n*2*Math.PI/k;
+        q[i] = {x: d*Math.cos(g), y: d*Math.sin(g)};
+      });
+    }
+
+    const ex = Math.max(...q.map(p => Math.abs(p.x))) + Rx + 6;
+    const ey = Math.max(...q.map(p => Math.abs(p.y))) + Rx + 6;
+    sc = Math.max(0.25, Math.min(1, (W/2 - 8) / ex, (H/2 - 8) / ey));
+    tg = q.map(p => ({x: cx + p.x*sc, y: cy + p.y*sc}));
+
+    /* start positions: pushed slightly outward, kept inside the canvas */
+    const push = Math.max(0, Math.min(40, (W/2 - 8) - ex*sc));
+    st = tg.map(p => {
+      const dx = p.x - cx, dy = p.y - cy, m = Math.hypot(dx, dy);
+      if (m < 1) return p;
+      return {x: p.x + dx/m*push, y: p.y + dy/m*push};
+    });
+  }
+
+  const t = approach * approach * (3 - 2 * approach);
+  S.baseTargets = tg;
+  S.sc = sc;
+  S.pos = st.map((sp, i) => ({
+    x: sp.x + (tg[i].x - sp.x) * t,
+    y: sp.y + (tg[i].y - sp.y) * t
+  }));
+}
+
+const slotCol = sl => sl === 1 ? T.c1 : T.c2;
+
+/* ===== DRAW ATOM ===== */
+function drawAtom(a, p, s) {
+  const sh = shellsOf(a);
+  ctx.lineWidth = 1.2;
+
+  sh.forEach((n,k) => {
+    if (!n) return;
+    const r = (26 + k*15) * s;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, 7);
+    ctx.strokeStyle = T.ring;
+    ctx.stroke();
+
+    const skip = (S.type === 'cov' && k === sh.length-1) ? Math.min(a.sh, n) : 0;
+    for (let e = skip; e < n; e++) {
+      const g = ang*(k%2?-1:1) + e*2*Math.PI/n;
+      ctx.beginPath();
+      ctx.arc(p.x+r*Math.cos(g), p.y+r*Math.sin(g), Math.max(2.2, 4.3*s), 0, 7);
+      ctx.fillStyle = (k === sh.length-1 && a.gained && e >= n-a.gained) ? T.gold : T.e;
+      ctx.fill();
+    }
+  });
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 14*s+4, 0, 7);
+  ctx.fillStyle = slotCol(a.slot);
+  ctx.fill();
+
+  const net = a.lost - a.gained;
+  ctx.fillStyle = '#fff';
+  ctx.font = `600 ${Math.max(10, 12*s+2)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(a.e.s + (net>0?sup(net)+'⁺':net<0?sup(-net)+'⁻':''), p.x, p.y);
+}
+
+/* ===== LENS ===== */
+function lensInfo(A, B, Ra, Rb) {
+  const dx = B.x-A.x, dy = B.y-A.y;
+  const d = Math.hypot(dx,dy) || 1;
+  const ux = dx/d, uy = dy/d, nx = -uy, ny = ux;
+  const th = Math.atan2(dy,dx);
+  const a = (d*d+Ra*Ra-Rb*Rb)/(2*d);
+  const h2 = Ra*Ra - a*a;
+  const ok = h2 > 16 && d > Math.abs(Ra-Rb)+3 && d < Ra+Rb-3;
+  const h = Math.sqrt(Math.max(h2,0));
+  const aA = Math.atan2(h,a), aB = Math.atan2(h,d-a);
+  return {A,B,Ra,Rb,d,ux,uy,nx,ny,th,a,h,aA,aB,ok,lenA:2*aA*Ra,lenB:2*aB*Rb};
+}
+
+function lensPos(L, sl) {
+  if (sl < L.lenA) {
+    const f = L.aA - sl/L.Ra;
+    return {
+      x: L.A.x + L.Ra*(Math.cos(f)*L.ux + Math.sin(f)*L.nx),
+      y: L.A.y + L.Ra*(Math.cos(f)*L.uy + Math.sin(f)*L.ny)
+    };
+  }
+  const q = -L.aB + (sl-L.lenA)/L.Rb;
+  return {
+    x: L.B.x + L.Rb*(-Math.cos(q)*L.ux + Math.sin(q)*L.nx),
+    y: L.B.y + L.Rb*(-Math.cos(q)*L.uy + Math.sin(q)*L.ny)
+  };
+}
+
+/* ===== FRAME ===== */
+function frame(now) {
+  requestAnimationFrame(frame);
+  fr++;
+  if (fr % 30 === 1) readTheme();
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  if (approach !== approachTarget) {
+    const speed = RM ? 1 : 0.022 * spd;
+    const dir = approachTarget > approach ? 1 : -1;
+    approach += dir * speed;
+    if (dir === 1) approach = Math.min(approach, approachTarget);
+    else approach = Math.max(approach, approachTarget);
+  }
+
+  lay();
+  const at = S.atoms, P = S.pos, s = S.sc;
+
+  if (!RM) ang += .015;
+  if (autoOn && now-last > 1000/spd && S.k < S.total && !fly.length) {
+    last = now; stepOnce();
+  }
+  if (autoOn && S.k >= S.total && !fly.length) {
+    autoOn = false;
+    $('auto').textContent = '▶ অটো';
+  }
+
+  /* ----- METAL ----- */
+  if (S.type === 'metal') {
+    const c = S.cell;
+    const x0 = cw/2-2.5*c, x1 = cw/2+2.5*c;
+    const y0 = ch/2-1.5*c, y1 = ch/2+1.5*c;
+
+    if (sea.length) {
+      ctx.globalAlpha = .13;
+      ctx.fillStyle = T.c1;
+      ctx.fillRect(x0, y0, x1-x0, y1-y0);
+      ctx.globalAlpha = 1;
+    }
+
+    at.forEach((a,i) => {
+      ctx.beginPath();
+      ctx.arc(P[i].x, P[i].y, c*.34, 0, 7);
+      ctx.fillStyle = slotCol(a.slot);
+      ctx.globalAlpha = .9;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = '#fff';
+      ctx.font = `600 ${c*.25}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(a.e.s + (a.lost ? sup(a.lost)+'⁺' : ''), P[i].x, P[i].y);
+    });
+
+    sea.forEach(e => {
+      e.vx = e.vx*.96 + (Math.random()-.5)*.6 + (volt?.1:0);
+      e.vy = e.vy*.96 + (Math.random()-.5)*.6;
+      const m = Math.hypot(e.vx, e.vy);
+      if (m > 2.4) { e.vx *= 2.4/m; e.vy *= 2.4/m; }
+      e.x += e.vx*spd; e.y += e.vy*spd;
+
+      if (volt) { if (e.x > x1) e.x = x0; }
+      else if (e.x > x1 || e.x < x0) e.vx *= -1;
+      if (e.x < x0 && volt) e.x = x1;
+      if (e.y < y0 || e.y > y1) e.vy *= -1;
+      e.x = Math.max(x0-2, Math.min(x1+2, e.x));
+      e.y = Math.max(y0, Math.min(y1, e.y));
+
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, 3.5, 0, 7);
+      ctx.fillStyle = T.e;
+      ctx.fill();
+    });
+
+    if (volt) {
+      ctx.fillStyle = T.gold;
+      ctx.font = '600 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('e⁻ প্রবাহ  ⟶', cw/2, y1+16);
+    }
+    return;
+  }
+
+  /* ----- IONIC ----- */
+  if (S.type === 'ion') {
+    ctx.lineWidth = Math.max(2, 2.5*s+.5);
+    ctx.setLineDash([6,5]);
+    ctx.strokeStyle = T.gold;
+
+    Object.keys(S.edge).forEach(k => {
+      const [d,a] = k.split(',').map(Number);
+      const n = S.edge[k];
+      const A = P[d], B = P[a];
+      const dx = B.x-A.x, dy = B.y-A.y;
+      const L = Math.hypot(dx,dy) || 1;
+      const ux = dx/L, uy = dy/L, nx = -uy, ny = ux;
+      const r0 = 14*s+4;
+
+      for (let q = 0; q < n; q++) {
+        const o = (q-(n-1)/2)*8*s;
+        ctx.beginPath();
+        ctx.moveTo(A.x+ux*r0+nx*o, A.y+uy*r0+ny*o);
+        ctx.lineTo(B.x-ux*r0+nx*o, B.y-uy*r0+ny*o);
+        ctx.stroke();
+      }
+    });
+    ctx.setLineDash([]);
+  }
+
+  /* ----- COVALENT ----- */
+  if (S.type === 'cov') {
+    ctx.lineCap = 'round';
+    Object.keys(S.bonds).forEach(key => {
+      const [i,j] = key.split('-').map(Number);
+      const n = S.bonds[key];
+      const A = P[i], B = P[j];
+      const L = lensInfo(A, B, Rm(at[i])*s, Rm(at[j])*s);
+
+      if (L.ok) {
+        ctx.beginPath();
+        ctx.arc(A.x, A.y, L.Ra, L.th-L.aA, L.th+L.aA);
+        ctx.arc(B.x, B.y, L.Rb, L.th+Math.PI-L.aB, L.th+Math.PI+L.aB);
+        ctx.closePath();
+        ctx.globalAlpha = .2;
+        ctx.fillStyle = T.gold;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      const r0 = 14*s+4;
+      ctx.strokeStyle = T.gold;
+      ctx.lineWidth = Math.max(2, 3*s+1);
+
+      for (let q = 0; q < n; q++) {
+        const o = (q-(n-1)/2)*7*s;
+        ctx.beginPath();
+        ctx.moveTo(A.x+L.ux*r0+L.nx*o, A.y+L.uy*r0+L.ny*o);
+        ctx.lineTo(B.x-L.ux*r0+L.nx*o, B.y-L.uy*r0+L.ny*o);
+        ctx.stroke();
+      }
+    });
+  }
+
+  at.forEach((a,i) => drawAtom(a, P[i], s));
+
+  /* ----- SHARED e⁻ ----- */
+  if (S.type === 'cov') {
+    const cache = {};
+    pairs.forEach(p => {
+      p.t = Math.min(1, p.t + .03*spd);
+      const key = p.i+'-'+p.j;
+      const A = P[p.i], B = P[p.j];
+      const k = S.ord[key], N = 2*k;
+      const L = cache[key] || (cache[key] = lensInfo(A, B, Rm(at[p.i])*s, Rm(at[p.j])*s));
+      const e = p.t*p.t*(3-2*p.t);
+
+      [0,1].forEach(ea => {
+        const idx = p.q*2+ea;
+        const fr2 = (ang*3/(2*Math.PI) + idx/N) % 1;
+        let tx, ty;
+
+        if (L.ok) {
+          const q = lensPos(L, fr2*(L.lenA+L.lenB));
+          tx = q.x; ty = q.y;
+        } else {
+          const f = fr2*2*Math.PI;
+          const ax = Math.max(10, L.d*.3), ly = Math.max(7, 9*s);
+          const mx = (A.x+B.x)/2, my = (A.y+B.y)/2;
+          tx = mx + L.ux*ax*Math.cos(f) + L.nx*ly*Math.sin(f);
+          ty = my + L.uy*ax*Math.cos(f) + L.ny*ly*Math.sin(f);
+        }
+
+        const sx = ea ? B.x-L.ux*L.Rb : A.x+L.ux*L.Ra;
+        const sy = ea ? B.y-L.uy*L.Rb : A.y+L.uy*L.Ra;
+        const sl = at[ea?p.j:p.i].slot;
+
+        ctx.beginPath();
+        ctx.arc(sx+(tx-sx)*e, sy+(ty-sy)*e, Math.max(3, 4.6*s), 0, 7);
+        ctx.fillStyle = slotCol(sl);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    });
+  }
+
+  /* ----- FLYING e⁻ ----- */
+  for (let i = fly.length-1; i >= 0; i--) {
+    const f = fly[i];
+    const A = P[f.d], B = P[f.a];
+    f.t += (RM ? 1 : .02) * spd;
+    const t = Math.min(1, f.t);
+
+    ctx.beginPath();
+    ctx.arc(
+      A.x+(B.x-A.x)*t,
+      A.y+(B.y-A.y)*t - Math.sin(t*Math.PI)*45,
+      6, 0, 7
+    );
+    ctx.fillStyle = T.gold;
+    ctx.fill();
+
+    if (f.t >= 1) {
+      at[f.a].gained++;
+      const ek = f.d+','+f.a;
+      S.edge[ek] = (S.edge[ek] || 0) + 1;
+      fly.splice(i,1);
+      updateUI();
+    }
+  }
+
+  if (S.type === 'ion' && S.total && S.k >= S.total && !fly.length) {
+    ctx.fillStyle = T.gold;
+    ctx.font = '600 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⊕ ⟷ ⊖  স্থির-তড়িৎ আকর্ষণ', cw/2, ch-12);
+  }
+
+  if (S.type === 'none') {
+    ctx.fillStyle = T.fg;
+    ctx.font = '600 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('বন্ধন গঠিত হয় না', cw/2, ch-12);
+  }
+}
+
+/* ===== RESIZE ===== */
+function resize() {
+  const d = devicePixelRatio || 1, r = cv.parentElement;
+  cw = r.clientWidth; ch = r.clientHeight;
+  cv.width = cw*d; cv.height = ch*d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+
+/* ===== VALENCE ===== */
+function fillV(sl) {
+  const e = el(sl === 1 ? z1 : z2), s = $('v'+sl);
+  s.innerHTML = '';
+  e.vs.forEach(v => s.add(new Option(
+    e.t === 'm'
+      ? `যোজ্যতা +${v}  (${e.s}${sup(v)}⁺, ${e.n}(${ROM[v]}))`
+      : (e.t === 'g' ? 'যোজ্যতা 0' : `যোজ্যতা ${v}`),
+    v
+  )));
+  s.disabled = e.vs.length < 2;
+  s.value = sl === 1 ? v1 : v2;
+}
+
+function pick(a, b, va, vb) {
+  z1 = a; z2 = b;
+  v1 = (va && el(a).vs.includes(va)) ? va : el(a).vs[0];
+  v2 = (vb && el(b).vs.includes(vb)) ? vb : el(b).vs[0];
+  $('s1').value = a;
+  $('s2').value = b;
+  fillV(1);
+  fillV(2);
+  setup();
+}
+
+/* ===== EVENTS ===== */
+['s1','s2'].forEach((id,n) => {
+  const s = $(id);
+  E.forEach(e => s.add(new Option(`${e.z}. ${e.n} (${e.s})`, e.z)));
+  s.onchange = () => n
+    ? pick(z1, +s.value, v1, undefined)
+    : pick(+s.value, z2, undefined, v2);
+});
+
+$('v1').onchange = e => pick(z1, z2, +e.target.value, v2);
+$('v2').onchange = e => pick(z1, z2, v1, +e.target.value);
+
+PRE.forEach(([l,a,b,va,vb]) => {
+  const x = document.createElement('button');
+  x.textContent = l;
+  x.onclick = () => pick(a, b, va, vb);
+  $('chips').appendChild(x);
+});
+
+$('go').onclick = stepOnce;
+
+$('auto').onclick = () => {
+  autoOn = !autoOn;
+  $('auto').textContent = autoOn ? '⏸ থামান' : '▶ অটো';
+  if (autoOn) beginApproach();
+};
+
+$('rst').onclick = () => { setup(); };
+
+$('swap').onclick = () => pick(z2, z1, v2, v1);
+
+$('rnd').onclick = () => {
+  const a = 1+Math.floor(Math.random()*60);
+  const b = 1+Math.floor(Math.random()*60);
+  const pv = z => {
+    const l = el(z).vs;
+    return l[Math.floor(Math.random()*l.length)];
+  };
+  pick(a, b, pv(a), pv(b));
+};
+
+$('vb').onclick = () => {
+  volt = !volt;
+  $('vb').style.borderColor = volt ? 'var(--gold)' : '';
+  updateUI();
+};
+
+$('sp').oninput = e => spd = +e.target.value;
+
+addEventListener('resize', resize);
+
+/* ===== INIT ===== */
+readTheme();
+resize();
+pick(11, 17);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
